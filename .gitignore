@@ -1,0 +1,51 @@
+# Objetos compilados
+*.o
+*.ko
+*.obj
+*.elf
+
+# Arquivos pré-compilados
+*.gch
+*.pch
+
+# Bibliotecas compiladas
+*.a
+*.la
+*.lo
+*.lai
+*.so
+*.so.*
+*.dylib
+
+# Executáveis
+*.out
+*.app
+*.i*
+*.lai*
+
+# Arquivos gerados pelo CMake
+CMakeLists.txt.user
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+Testing/
+Makefile
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+
+# Pastas de Build
+build/
+bin/
+Debug/
+Release/
+x64/
+
+# Arquivos de IDEs (Visual Studio, VS Code, CLion, etc.)
+.vscode/
+.idea/
+*.suo
+*.sln
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user

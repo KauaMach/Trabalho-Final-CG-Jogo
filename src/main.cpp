@@ -7,27 +7,32 @@
 #include <vector>
 #include <iostream>
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 // Instanciação dos Módulos Principais
 Renderer *renderer = nullptr;
 BoidsEngine *boidsEngine = nullptr;
 BossFSM *bossFSM = nullptr;
 AudioManager *audioManager = nullptr;
 
-// Definição do Enumerador de Fases com a Tela Inicial
-enum Fase
+// Definição do Enumerador de Fases (Alinhado com os índices de estado do renderer)
+enum TelaEstado
 {
-    TELA_INICIAL,
-    FASE_1_SANGUE,
-    FASE_2_PULMAO,
-    FASE_3_LINFATICO,
-    FASE_4_NERVOSO,
-    FASE_5_NUCLEO_VIRAL,
-    VITORIA_TOTAL
+    TELA_MENU = 0,
+    FASE_1_SANGUE = 1,
+    FASE_2_PULMAO = 2,
+    FASE_3_LINFATICO = 3,
+    FASE_4_NERVOSO = 4,
+    FASE_5_NUCLEO_VIRAL = 5,
+    TELA_VITORIA = 6,
+    TELA_DERROTA = 7,
+    TELA_CREDITOS = 8,
+    TELA_FIM = 9
 };
-Fase faseAtual = TELA_INICIAL; // O jogo começa estritamente na Tela Inicial
 
-// IDs de Textura do OpenGL
-unsigned int texturaFundoInicioID = 0;
+TelaEstado telaAtual = TELA_MENU; // O jogo começa estritamente na Tela Inicial
 
 // Estado Sólido das Entidades e Variáveis de Gameplay
 float playerX = 0.0f, playerY = -4.0f;
@@ -48,14 +53,13 @@ void SpecialKeys(int key, int x, int y);
 void MouseClick(int button, int state, int mouseX, int mouseY);
 void TimerPhysics(int value);
 const char *ObterNomeFaseEBoss(const char *&nomeBoss);
-void RenderizarTelaMenu();
 
 int main(int argc, char **argv)
 {
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
     glutInitWindowSize(1024, 768);
-    glutCreateWindow("Imunidade: A Guerra Celular");
+    glutCreateWindow("Imunidade: A Guerra Celular [cite: 612]");
 
     renderer = new Renderer();
     renderer->InicializarGL();
@@ -67,10 +71,17 @@ int main(int argc, char **argv)
     audioManager = new AudioManager();
     audioManager->InicializarAudio();
 
-    // Carregamento da sua imagem incrível de abertura
-    texturaFundoInicioID = renderer->CarregarTextura("assets/textures/background_inicial.png");
+    // ====================================================
+    // --- INICIALIZAÇÃO ABSTRAÍDA DAS TEXTURAS DE MENU ---
+    // ====================================================
+    // Mapeamento explícito casando com o array texturasID[5] da classe Renderer
+    renderer->InicializarTexturaEstado(0, "assets/textures/background_inicial.png"); // Menu Inicial com 3 botões
+    renderer->InicializarTexturaEstado(1, "assets/textures/fim.png");                // Tela de Fim de Jogo opcional
+    renderer->InicializarTexturaEstado(2, "assets/textures/vitoria.png");            // Vitória
+    renderer->InicializarTexturaEstado(3, "assets/textures/derrota.png");            // Derrota
+    renderer->InicializarTexturaEstado(4, "assets/textures/creditos.png");           // Créditos
 
-    // Inicia a população de boids (inimigos)
+    // População inicial do enxame de boids (inimigos)
     for (int i = 0; i < 20; ++i)
     {
         listaViruses.push_back({static_cast<float>(i - 10) * 0.6f, 4.0f, 0.0f, 0.0f, 0.0f, 0.0f, i, true});
@@ -81,12 +92,13 @@ int main(int argc, char **argv)
     glutReshapeFunc(ReshapeCallback);
     glutKeyboardFunc(KeyboardDown);
     glutSpecialFunc(SpecialKeys);
-    glutMouseFunc(MouseClick); // Monitor do clique no botão Start
+    glutMouseFunc(MouseClick);
     glutTimerFunc(16, TimerPhysics, 0);
 
     std::cout << "Engine Inicializada. Aguardando comando START no Menu Principal..." << std::endl;
     glutMainLoop();
 
+    // Desalocação segura de memória
     delete renderer;
     delete boidsEngine;
     delete bossFSM;
@@ -97,9 +109,9 @@ int main(int argc, char **argv)
 // Retorna o nome da fase e do boss correspondente para atualização do HUD
 const char *ObterNomeFaseEBoss(const char *&nomeBoss)
 {
-    switch (faseAtual)
+    switch (telaAtual)
     {
-    case TELA_INICIAL:
+    case TELA_MENU:
         nomeBoss = "Nenhum";
         return "MENU PRINCIPAL";
     case FASE_1_SANGUE:
@@ -117,76 +129,66 @@ const char *ObterNomeFaseEBoss(const char *&nomeBoss)
     case FASE_5_NUCLEO_VIRAL:
         nomeBoss = "Nexus-7 Omega";
         return "FASE 5 - NUCLEO VIRAL (FINAL)";
-    case VITORIA_TOTAL:
+    case TELA_VITORIA:
         nomeBoss = "Nenhum";
         return "PACIENTE SALVO! VITORIA!";
+    case TELA_DERROTA:
+        nomeBoss = "Nenhum";
+        return "GAME OVER";
+    default:
+        nomeBoss = "Nenhum";
+        return "";
     }
-    return "";
 }
 
-// Renderiza a sua imagem de abertura em tela cheia usando projeção ortogonal 2D
-void RenderizarTelaMenu()
-{
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glLoadIdentity();
-    gluOrtho2D(0, 1024, 0, 768);
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-    glLoadIdentity();
-
-    glDisable(GL_LIGHTING);
-    glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, texturaFundoInicioID);
-
-    // Renderiza a textura esticada perfeitamente na janela de 1024x768
-    glColor3f(1.0f, 1.0f, 1.0f);
-    glBegin(GL_QUADS);
-    glTexCoord2f(0.0f, 0.0f);
-    glVertex2f(0.0f, 0.0f);
-    glTexCoord2f(1.0f, 0.0f);
-    glVertex2f(1024.0f, 0.0f);
-    glTexCoord2f(1.0f, 1.0f);
-    glVertex2f(1024.0f, 768.0f);
-    glTexCoord2f(0.0f, 1.0f);
-    glVertex2f(0.0f, 768.0f);
-    glEnd();
-
-    glDisable(GL_TEXTURE_2D);
-    glEnable(GL_LIGHTING);
-
-    glPopMatrix();
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
-    glMatrixMode(GL_MODELVIEW);
-}
-
-// Trata o clique do mouse em cima do botão START da sua imagem
+// Trata o clique do mouse em cima do menu de 3 botões empilhados verticalmente
 void MouseClick(int button, int state, int mouseX, int mouseY)
 {
-    if (faseAtual == TELA_INICIAL && button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
+    if (telaAtual == TELA_MENU && button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
     {
-        // Correção de orientação do eixo Y do freeGLUT (0 passa a ser a base do monitor)
-        int realMouseY = 768 - mouseY;
+        int realMouseY = 768 - mouseY; // Inversão do Y para o padrão matemático gráfico [cite: 95]
 
-        // Coordenadas calibradas milimetricamente para o botão da sua imagem
-        if (mouseX >= 365 && mouseX <= 660 && realMouseY >= 115 && realMouseY <= 215)
+        // Todos os botões estão alinhados horizontalmente entre X (360 e 660)
+        if (mouseX >= 360 && mouseX <= 660)
         {
-            std::cout << "Botao START detectado! Iniciando Jogo..." << std::endl;
+            // --- BOTÃO 1: START ---
+            if (realMouseY >= 400 && realMouseY <= 490)
+            {
+                std::cout << "Iniciando o jogo..." << std::endl;
+                audioManager->TocarSurge();
+                EmitirExplosao(0.0f, -4.0f, 1.0f, 1.0f, 1.0f);
+                telaAtual = FASE_1_SANGUE;
+            }
 
-            audioManager->TocarSurge();
-            EmitirExplosao(0.0f, -4.0f, 1.0f, 1.0f, 1.0f);
+            // --- BOTÃO 2: CRÉDITOS ---
+            else if (realMouseY >= 250 && realMouseY <= 340)
+            {
+                std::cout << "Abrindo creditos..." << std::endl;
+                audioManager->TocarLaser();
+                telaAtual = TELA_CREDITOS;
+            }
 
-            // Transiciona o estado do jogo para a Fase 1
-            faseAtual = FASE_1_SANGUE;
+            // --- BOTÃO 3: SAIR ---
+            else if (realMouseY >= 100 && realMouseY <= 190)
+            {
+                std::cout << "Saindo do jogo..." << std::endl;
+                audioManager->LimparAudio();
+                exit(0);
+            }
         }
+    }
+    else if ((telaAtual == TELA_CREDITOS || telaAtual == TELA_FIM) && button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
+    {
+        // Cliques em telas estáticas de repouso fazem o jogo voltar de forma segura para o Menu
+        telaAtual = TELA_MENU;
     }
 }
 
 void TimerPhysics(int value)
 {
-    // Se o jogo estiver nas telas de menu ou de fim de jogo, pausa as atualizações físicas
-    if (faseAtual == TELA_INICIAL || faseAtual == VITORIA_TOTAL)
+    // Congela processamento se o jogo estiver em qualquer tela de repouso ou menus
+    if (telaAtual == TELA_MENU || telaAtual == TELA_VITORIA ||
+        telaAtual == TELA_DERROTA || telaAtual == TELA_CREDITOS || telaAtual == TELA_FIM)
     {
         glutPostRedisplay();
         glutTimerFunc(16, TimerPhysics, 0);
@@ -199,18 +201,28 @@ void TimerPhysics(int value)
     // 2. Atualiza os Boids inimigos
     boidsEngine->ProcessarEnxame(listaViruses, playerX, playerY, surgeAtivo);
 
-    // 3. Monitoramento e Progressão de Fases
+    // 3. Monitoramento de Derrota (HP do Paciente zerou)
+    if (hsp <= 0.0f)
+    {
+        telaAtual = TELA_DERROTA;
+    }
+
+    // 4. Progressão de Fases controlada ao derrotar o Boss
     if (bossHP <= 0.0f)
     {
-        int proximaFase = static_cast<int>(faseAtual) + 1;
-        faseAtual = static_cast<Fase>(proximaFase);
-
-        if (faseAtual != VITORIA_TOTAL)
+        if (telaAtual == FASE_5_NUCLEO_VIRAL)
         {
+            std::cout << "Parabens! O corpo do paciente esta 100% imunizado!" << std::endl;
+            telaAtual = TELA_VITORIA;
+        }
+        else
+        {
+            int proximaFase = static_cast<int>(telaAtual) + 1;
+            telaAtual = static_cast<TelaEstado>(proximaFase);
+
             std::cout << "Zona purificada! Avancando de fase..." << std::endl;
             EmitirExplosao(0.0f, 0.0f, 0.0f, 0.7f, 1.0f);
 
-            // Aumenta o HP do próximo Boss baseado na fase
             bossHP = 150.0f + (proximaFase * 50.0f);
 
             // Reorganiza as células virais no topo da tela para a nova fase
@@ -221,13 +233,9 @@ void TimerPhysics(int value)
                 listaViruses[i].x = static_cast<float>(i - 10) * 0.6f;
             }
         }
-        else
-        {
-            std::cout << "Parabens! O corpo do paciente esta 100% imunizado!" << std::endl;
-        }
     }
 
-    // 4. Mecânica Completa de Colisões (Narrow Phase)
+    // 5. Mecânica Completa de Colisões (Narrow Phase)
     SphereHitbox hitboxJogador = {playerX, playerY, 0.4f};
 
     for (size_t i = 0; i < listaViruses.size(); ++i)
@@ -245,13 +253,14 @@ void TimerPhysics(int value)
                 hsp -= 2.0f;
                 if (hsp < 0.0f)
                     hsp = 0.0f;
-                listaViruses[i].y += 1.5f;                          // Repele o vírus para trás
-                EmitirExplosao(playerX, playerY, 1.0f, 0.0f, 0.0f); // Sangue (Vermelho)
+                listaViruses[i].y += 1.5f;
+                EmitirExplosao(playerX, playerY, 1.0f, 0.0f, 0.0f);
             }
         }
 
         // Colisão: Ataque do Jogador destrói o Inimigo e fere o Boss
         SphereHitbox hitboxAtaque = {playerX, playerY + 0.6f, 0.5f};
+#ifdef _WIN32
         if (GetAsyncKeyState(VK_SPACE) & 0x8000)
         {
             if (CollisionEngine::ChecarEsferaParaEsfera(hitboxAtaque, hitboxVirus))
@@ -259,11 +268,11 @@ void TimerPhysics(int value)
                 listaViruses[i].ativo = false;
                 score += 100;
                 dnaColetado += 1;
-                EmitirExplosao(listaViruses[i].x, listaViruses[i].y, 0.1f, 0.9f, 0.2f); // Explosão celular (Verde)
-
-                bossHP -= 10.0f; // Dano colateral causado no Boss central
+                EmitirExplosao(listaViruses[i].x, listaViruses[i].y, 0.1f, 0.9f, 0.2f);
+                bossHP -= 10.0f;
             }
         }
+#endif
     }
 
     // Gerenciador de esvaziamento/recarga da barra de SURGE (Modo Fúria)
@@ -291,29 +300,51 @@ void DisplayLoop()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glLoadIdentity();
 
-    // Se estiver no Menu Inicial, renderiza apenas a imagem de abertura e sai
-    if (faseAtual == TELA_INICIAL)
+    // ====================================================
+    // --- RENDERS DE TELA INTEIRA USANDO A ABSTRAÇÃO ---
+    // ====================================================
+    switch (telaAtual)
     {
-        RenderizarTelaMenu();
+    case TELA_MENU:
+        renderer->RenderizarTelaEstado(0); // Imagem 0: Menu Principal (3 Botões)
         glutSwapBuffers();
         return;
+    case TELA_FIM:
+        renderer->RenderizarTelaEstado(1); // Imagem 1: fim.png
+        glutSwapBuffers();
+        return;
+    case TELA_VITORIA:
+        renderer->RenderizarTelaEstado(2); // Imagem 2: vitoria.png
+        glutSwapBuffers();
+        return;
+    case TELA_DERROTA:
+        renderer->RenderizarTelaEstado(3); // Imagem 3: derrota.png
+        glutSwapBuffers();
+        return;
+    case TELA_CREDITOS:
+        renderer->RenderizarTelaEstado(4); // Imagem 4: creditos.png
+        glutSwapBuffers();
+        return;
+    default:
+        break;
     }
 
-    // --- RENDERIZAÇÃO DO SCENARIO DO JOGO 3D ---
+    // --- RENDERIZAÇÃO DO SCENARIO DO JOGO 3D COM OS NOVOS ARQUIVOS ---
     renderer->ConfigurarCamera(glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT));
     renderer->AtualizarIluminacaoDinamica(playerPolaridade, playerX, playerY);
 
-    // Desenho tridimensional da Nave Nanocell (Jogador)
+    // 1. Desenho do Jogador (Utilizando o seu Leucócito .obj convertido estaticamente)
     glPushMatrix();
     glTranslatef(playerX, playerY, 0.0f);
     if (playerPolaridade == AZUL)
         glColor3f(0.1f, 0.4f, 1.0f);
     else
         glColor3f(1.0f, 0.1f, 0.1f);
-    renderer->DesenharCuboGouraud(0.8f);
+
+    renderer->DesenharLeukocito(0.6f);
     glPopMatrix();
 
-    // Desenho tridimensional dos Vírus (Inimigos normais)
+    // 2. Desenho do Enxame de Inimigos (Alternando dinamicamente os 4 renders de vírus por fase)
     for (const auto &v : listaViruses)
     {
         if (v.ativo)
@@ -321,24 +352,32 @@ void DisplayLoop()
             glPushMatrix();
             glTranslatef(v.x, v.y, 0.0f);
             glColor3f(0.1f, 0.9f, 0.2f);
-            renderer->DesenharEsferaGouraud(0.3f, 12);
+
+            if (telaAtual == FASE_1_SANGUE)
+                renderer->DesenharVirus1(0.3f);
+            else if (telaAtual == FASE_2_PULMAO)
+                renderer->DesenharVirus2(0.3f);
+            else if (telaAtual == FASE_3_LINFATICO)
+                renderer->DesenharVirus3(0.3f);
+            else
+                renderer->DesenharVirus4(0.3f);
+
             glPopMatrix();
         }
     }
 
-    // Desenho tridimensional do Boss da Fase
-    if (faseAtual != VITORIA_TOTAL)
+    // 3. Desenho do Boss da Fase (Mantido como Esfera Gouraud estável de CG) [cite: 619]
+    if (telaAtual != TELA_VITORIA && telaAtual != TELA_DERROTA)
     {
         glPushMatrix();
-        glTranslatef(0.0f, 3.5f, 0.0f); // Posicionado no topo central
+        glTranslatef(0.0f, 3.5f, 0.0f);
 
-        // A cor do modelo do Boss responde em tempo real ao estado da FSM
         if (bossFSM->ObterEstadoAtual() == PATRULHA)
-            glColor3f(0.5f, 0.2f, 0.8f); // Roxo
+            glColor3f(0.5f, 0.2f, 0.8f);
         else if (bossFSM->ObterEstadoAtual() == AGRESSIVO)
-            glColor3f(0.8f, 0.5f, 0.0f); // Laranja
+            glColor3f(0.8f, 0.5f, 0.0f);
         else
-            glColor3f(1.0f, 0.0f, 0.3f); // Vermelho Raivoso
+            glColor3f(1.0f, 0.0f, 0.3f);
 
         renderer->DesenharEsferaGouraud(0.7f, 16);
         glPopMatrix();
@@ -347,7 +386,7 @@ void DisplayLoop()
     // Atualiza o motor dinâmico de partículas na tela
     AtualizarERenderizarParticulas();
 
-    // Renderização Dinâmica do HUD de Texto por cima da tela
+    // Renderização Dinâmica do HUD de Texto
     const char *nomeBossCurrent = nullptr;
     const char *nomeFaseCurrent = ObterNomeFaseEBoss(nomeBossCurrent);
 
@@ -368,8 +407,7 @@ void ReshapeCallback(int w, int h)
 
 void KeyboardDown(unsigned char key, int x, int y)
 {
-    // Ignora inputs de movimentação se estiver na Tela Inicial do Menu
-    if (faseAtual == TELA_INICIAL)
+    if (telaAtual == TELA_MENU || telaAtual == TELA_VITORIA || telaAtual == TELA_DERROTA || telaAtual == TELA_CREDITOS || telaAtual == TELA_FIM)
     {
         if (key == 27)
             exit(0);
@@ -397,20 +435,20 @@ void KeyboardDown(unsigned char key, int x, int y)
         break;
     case 32: // Espaço (Atirar)
         audioManager->TocarLaser();
-        EmitirExplosao(playerX, playerY + 0.5f, 1.0f, 1.0f, 1.0f); // Flash do tiro
+        EmitirExplosao(playerX, playerY + 0.5f, 1.0f, 1.0f, 1.0f);
         break;
     case 'q':
-    case 'Q': // Ativar o Modo SURGE (Especial)
+    case 'Q': // Ativar o Modo SURGE
         if (barraSurge >= 100.0f)
         {
             surgeAtivo = true;
             audioManager->TocarSurge();
-            EmitirExplosao(playerX, playerY, 1.0f, 0.7f, 0.0f); // Onda de choque dourada
-            if (faseAtual != VITORIA_TOTAL)
-                bossHP -= 50.0f; // Dano massivo automático no Boss
+            EmitirExplosao(playerX, playerY, 1.0f, 0.7f, 0.0f);
+            if (telaAtual != TELA_VITORIA)
+                bossHP -= 50.0f;
         }
         break;
-    case 27: // ESC para sair do jogo com segurança
+    case 27:
         audioManager->LimparAudio();
         exit(0);
         break;
@@ -419,10 +457,9 @@ void KeyboardDown(unsigned char key, int x, int y)
 
 void SpecialKeys(int key, int x, int y)
 {
-    if (faseAtual == TELA_INICIAL)
+    if (telaAtual == TELA_MENU || telaAtual == TELA_VITORIA || telaAtual == TELA_DERROTA || telaAtual == TELA_CREDITOS || telaAtual == TELA_FIM)
         return;
 
-    // Altera a polaridade celular (cor do cubo) ao apertar SHIFT
     if (key == GLUT_KEY_SHIFT_L || key == GLUT_KEY_SHIFT_R)
     {
         playerPolaridade = (playerPolaridade == AZUL) ? VERMELHA : AZUL;

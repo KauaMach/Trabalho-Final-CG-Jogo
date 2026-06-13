@@ -38,9 +38,17 @@ public:
     void AtualizarIluminacaoDinamica(Polaridade polaridade, float playerX, float playerY);
     unsigned int CarregarTextura(const char *caminhoArquivo);
 
-    void DesenharCuboGouraud(float tamanho);
-    void DesenharEsferaGouraud(float raio, int subdivisoes);
     void RenderizarTextoHUD(float x, float y, const char *texto, void *fonte);
+    void DesenharEsferaGouraud(float raio, int subdivisoes);
+    void InicializarTexturaEstado(int indiceEstado, const char *caminhoImagem);
+
+    void RenderizarTelaEstado(int indiceEstado);
+
+    void DesenharVirus1(float tamanho);
+    void DesenharVirus2(float tamanho);
+    void DesenharVirus3(float tamanho);
+    void DesenharVirus4(float tamanho);
+    void DesenharLeukocito(float tamanho);
 };
 
 #endif
