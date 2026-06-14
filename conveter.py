@@ -46,9 +46,9 @@ def converter_obj_para_txt(caminho_obj, nome_arquivo_saida="funcao_virus.txt", n
 # === COMO EXECUTAR ===
 
 # Altere aqui o nome do seu arquivo vírus de entrada!
-converter_obj_para_txt("Virus1.obj", "renderer_virus1.txt", "DesenharVirus1")
-converter_obj_para_txt("Virus2.obj", "renderer_virus2.txt", "DesenharVirus2")
-converter_obj_para_txt("Virus3.obj", "renderer_virus3.txt", "DesenharVirus3")
-converter_obj_para_txt("Virus4.obj", "renderer_virus4.txt", "DesenharVirus4")
-converter_obj_para_txt("atirador.obj", "renderer_player.txt", "DesenharLeukocito")
+converter_obj_para_txt("virus1.obj", "renderer_virus1.cpp", "DesenharVirus1")
+converter_obj_para_txt("virus2.obj", "renderer_virus2.cpp", "DesenharVirus2")
+converter_obj_para_txt("virus3.obj", "renderer_virus3.cpp", "DesenharVirus3")
+converter_obj_para_txt("virus4.obj", "renderer_virus4.cpp", "DesenharVirus4")
+converter_obj_para_txt("atirador.obj", "renderer_player.cpp", "DesenharLeukocito")
 

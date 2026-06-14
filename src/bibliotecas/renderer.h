@@ -24,31 +24,31 @@ enum Polaridade
 
 class Renderer
 {
-private:
-    unsigned int texturasID[4];
-    float cameraX, cameraY, cameraZ;
-    float targetX, targetY, targetZ;
+    private:
+        unsigned int texturasID[6]; 
+        float cameraX, cameraY, cameraZ;
+        float targetX, targetY, targetZ;
 
-public:
-    Renderer();
-    ~Renderer();
+    public:
+        Renderer();
+        ~Renderer();
 
-    void InicializarGL();
-    void ConfigurarCamera(int width, int height);
-    void AtualizarIluminacaoDinamica(Polaridade polaridade, float playerX, float playerY);
-    unsigned int CarregarTextura(const char *caminhoArquivo);
+        void InicializarGL();
+        void ConfigurarCamera(int width, int height);
+        void AtualizarIluminacaoDinamica(Polaridade polaridade, float playerX, float playerY);
+        unsigned int CarregarTextura(const char *caminhoArquivo);
 
-    void RenderizarTextoHUD(float x, float y, const char *texto, void *fonte);
-    void DesenharEsferaGouraud(float raio, int subdivisoes);
-    void InicializarTexturaEstado(int indiceEstado, const char *caminhoImagem);
+        void RenderizarTextoHUD(float x, float y, const char *texto, void *fonte);
+        void DesenharEsferaGouraud(float raio, int subdivisoes);
+        void InicializarTexturaEstado(int indiceEstado, const char *caminhoImagem);
 
-    void RenderizarTelaEstado(int indiceEstado);
+        void RenderizarTelaEstado(int indiceEstado);
 
-    void DesenharVirus1(float tamanho);
-    void DesenharVirus2(float tamanho);
-    void DesenharVirus3(float tamanho);
-    void DesenharVirus4(float tamanho);
-    void DesenharLeukocito(float tamanho);
+        void DesenharVirus1(float tamanho);
+        void DesenharVirus2(float tamanho);
+        void DesenharVirus3(float tamanho);
+        void DesenharVirus4(float tamanho);
+        void DesenharLeukocito(float tamanho);
 };
 
 #endif

@@ -2,7 +2,7 @@
 
 void Renderer::InicializarTexturaEstado(int indiceEstado, const char *caminhoImagem)
 {
-    if (indiceEstado >= 0 && indiceEstado < 5)
+    if (indiceEstado >= 0 && indiceEstado < 6)
     {
         texturasID[indiceEstado] = CarregarTextura(caminhoImagem); // Mapeia na memória [cite: 672, 673]
     }
@@ -11,7 +11,7 @@ void Renderer::InicializarTexturaEstado(int indiceEstado, const char *caminhoIma
 // 2. Renderiza qualquer tela usando uma única lógica reaproveitável
 void Renderer::RenderizarTelaEstado(int indiceEstado)
 {
-    if (indiceEstado < 0 || indiceEstado >= 5 || texturasID[indiceEstado] == 0)
+    if (indiceEstado < 0 || indiceEstado >= 6 || texturasID[indiceEstado] == 0)
         return;
 
     glMatrixMode(GL_PROJECTION);

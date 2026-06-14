@@ -29,7 +29,8 @@ enum TelaEstado
     TELA_VITORIA = 6,
     TELA_DERROTA = 7,
     TELA_CREDITOS = 8,
-    TELA_FIM = 9
+    TELA_FIM = 9,
+    TELA_INSTRUCOES = 10
 };
 
 TelaEstado telaAtual = TELA_MENU; // O jogo começa estritamente na Tela Inicial
@@ -59,7 +60,7 @@ int main(int argc, char **argv)
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
     glutInitWindowSize(1024, 768);
-    glutCreateWindow("Imunidade: A Guerra Celular [cite: 612]");
+    glutCreateWindow("Imunidade: A Guerra Celular");
 
     renderer = new Renderer();
     renderer->InicializarGL();
@@ -74,12 +75,12 @@ int main(int argc, char **argv)
     // ====================================================
     // --- INICIALIZAÇÃO ABSTRAÍDA DAS TEXTURAS DE MENU ---
     // ====================================================
-    // Mapeamento explícito casando com o array texturasID[5] da classe Renderer
-    renderer->InicializarTexturaEstado(0, "assets/textures/background_inicial.png"); // Menu Inicial com 3 botões
+    renderer->InicializarTexturaEstado(0, "assets/textures/background_inicial.png"); // Menu Inicial com 4 botões
     renderer->InicializarTexturaEstado(1, "assets/textures/fim.png");                // Tela de Fim de Jogo opcional
     renderer->InicializarTexturaEstado(2, "assets/textures/vitoria.png");            // Vitória
     renderer->InicializarTexturaEstado(3, "assets/textures/derrota.png");            // Derrota
     renderer->InicializarTexturaEstado(4, "assets/textures/creditos.png");           // Créditos
+    renderer->InicializarTexturaEstado(5, "assets/textures/instrucoes.png");         // Instruções (Corrigido typo)
 
     // População inicial do enxame de boids (inimigos)
     for (int i = 0; i < 20; ++i)
@@ -106,7 +107,6 @@ int main(int argc, char **argv)
     return 0;
 }
 
-// Retorna o nome da fase e do boss correspondente para atualização do HUD
 const char *ObterNomeFaseEBoss(const char *&nomeBoss)
 {
     switch (telaAtual)
@@ -141,54 +141,60 @@ const char *ObterNomeFaseEBoss(const char *&nomeBoss)
     }
 }
 
-// Trata o clique do mouse em cima do menu de 3 botões empilhados verticalmente
+// Trata o clique do mouse considerando a nova imagem com os 4 botões verticais
 void MouseClick(int button, int state, int mouseX, int mouseY)
 {
     if (telaAtual == TELA_MENU && button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
     {
-        int realMouseY = 768 - mouseY; // Inversão do Y para o padrão matemático gráfico [cite: 95]
+        int realMouseY = 768 - mouseY; // Inversão para o padrão ortogonal 2D
 
-        // Todos os botões estão alinhados horizontalmente entre X (360 e 660)
+        // Todos os botões estão centralizados entre X (360 e 660)
         if (mouseX >= 360 && mouseX <= 660)
         {
             // --- BOTÃO 1: START ---
-            if (realMouseY >= 400 && realMouseY <= 490)
+            if (realMouseY >= 445 && realMouseY <= 525)
             {
                 std::cout << "Iniciando o jogo..." << std::endl;
                 audioManager->TocarSurge();
                 EmitirExplosao(0.0f, -4.0f, 1.0f, 1.0f, 1.0f);
                 telaAtual = FASE_1_SANGUE;
             }
-
             // --- BOTÃO 2: CRÉDITOS ---
-            else if (realMouseY >= 250 && realMouseY <= 340)
+            else if (realMouseY >= 335 && realMouseY <= 415)
             {
                 std::cout << "Abrindo creditos..." << std::endl;
                 audioManager->TocarLaser();
                 telaAtual = TELA_CREDITOS;
             }
-
             // --- BOTÃO 3: SAIR ---
-            else if (realMouseY >= 100 && realMouseY <= 190)
+            else if (realMouseY >= 225 && realMouseY <= 305)
             {
                 std::cout << "Saindo do jogo..." << std::endl;
                 audioManager->LimparAudio();
                 exit(0);
             }
+            // --- BOTÃO 4: INSTRUÇÕES ---
+            else if (realMouseY >= 115 && realMouseY <= 195)
+            {
+                std::cout << "Abrindo instrucoes..." << std::endl;
+                audioManager->TocarLaser();
+                telaAtual = TELA_INSTRUCOES;
+            }
         }
     }
-    else if ((telaAtual == TELA_CREDITOS || telaAtual == TELA_FIM) && button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
+    // Cliques em qualquer lugar das telas estáticas de repouso retornam com segurança ao Menu
+    else if ((telaAtual == TELA_CREDITOS || telaAtual == TELA_FIM || telaAtual == TELA_INSTRUCOES) && button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
     {
-        // Cliques em telas estáticas de repouso fazem o jogo voltar de forma segura para o Menu
         telaAtual = TELA_MENU;
     }
 }
 
 void TimerPhysics(int value)
 {
-    // Congela processamento se o jogo estiver em qualquer tela de repouso ou menus
+    // Congela processamento se o jogo estiver em menus ou telas de descanso
     if (telaAtual == TELA_MENU || telaAtual == TELA_VITORIA ||
-        telaAtual == TELA_DERROTA || telaAtual == TELA_CREDITOS || telaAtual == TELA_FIM)
+        telaAtual == TELA_DERROTA || telaAtual == TELA_CREDITOS || 
+        telaAtual == TELA_FIM || telaAtual == TELA_INSTRUCOES)
     {
         glutPostRedisplay();
         glutTimerFunc(16, TimerPhysics, 0);
@@ -306,7 +312,7 @@ void DisplayLoop()
     switch (telaAtual)
     {
     case TELA_MENU:
-        renderer->RenderizarTelaEstado(0); // Imagem 0: Menu Principal (3 Botões)
+        renderer->RenderizarTelaEstado(0); // Imagem 0: Menu Principal (4 Botões)
         glutSwapBuffers();
         return;
     case TELA_FIM:
@@ -323,6 +329,10 @@ void DisplayLoop()
         return;
     case TELA_CREDITOS:
         renderer->RenderizarTelaEstado(4); // Imagem 4: creditos.png
+        glutSwapBuffers();
+        return;
+    case TELA_INSTRUCOES:
+        renderer->RenderizarTelaEstado(5); // Imagem 5: instrucoes.png
         glutSwapBuffers();
         return;
     default:
@@ -366,7 +376,7 @@ void DisplayLoop()
         }
     }
 
-    // 3. Desenho do Boss da Fase (Mantido como Esfera Gouraud estável de CG) [cite: 619]
+    // 3. Desenho do Boss da Fase (Mantido como Esfera Gouraud estável de CG)
     if (telaAtual != TELA_VITORIA && telaAtual != TELA_DERROTA)
     {
         glPushMatrix();
@@ -407,7 +417,7 @@ void ReshapeCallback(int w, int h)
 
 void KeyboardDown(unsigned char key, int x, int y)
 {
-    if (telaAtual == TELA_MENU || telaAtual == TELA_VITORIA || telaAtual == TELA_DERROTA || telaAtual == TELA_CREDITOS || telaAtual == TELA_FIM)
+    if (telaAtual == TELA_MENU || telaAtual == TELA_VITORIA || telaAtual == TELA_DERROTA || telaAtual == TELA_CREDITOS || telaAtual == TELA_FIM || telaAtual == TELA_INSTRUCOES)
     {
         if (key == 27)
             exit(0);
@@ -457,7 +467,7 @@ void KeyboardDown(unsigned char key, int x, int y)
 
 void SpecialKeys(int key, int x, int y)
 {
-    if (telaAtual == TELA_MENU || telaAtual == TELA_VITORIA || telaAtual == TELA_DERROTA || telaAtual == TELA_CREDITOS || telaAtual == TELA_FIM)
+    if (telaAtual == TELA_MENU || telaAtual == TELA_VITORIA || telaAtual == TELA_DERROTA || telaAtual == TELA_CREDITOS || telaAtual == TELA_FIM || telaAtual == TELA_INSTRUCOES)
         return;
 
     if (key == GLUT_KEY_SHIFT_L || key == GLUT_KEY_SHIFT_R)
