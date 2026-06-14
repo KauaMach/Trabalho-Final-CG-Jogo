@@ -14,7 +14,6 @@
 // Instanciação dos Módulos Principais
 Renderer *renderer = nullptr;
 BoidsEngine *boidsEngine = nullptr;
-BossFSM *bossFSM = nullptr;
 AudioManager *audioManager = nullptr;
 
 // Definição do Enumerador de Fases (Alinhado com os índices de estado do renderer)
@@ -42,7 +41,6 @@ float barraSurge = 0.0f;
 bool surgeAtivo = false;
 int score = 0, combo = 1, dnaColetado = 0;
 float hsp = 100.0f;
-float bossHP = 150.0f;
 
 std::vector<Boid> listaViruses;
 
@@ -53,7 +51,7 @@ void KeyboardDown(unsigned char key, int x, int y);
 void SpecialKeys(int key, int x, int y);
 void MouseClick(int button, int state, int mouseX, int mouseY);
 void TimerPhysics(int value);
-const char *ObterNomeFaseEBoss(const char *&nomeBoss);
+const char *ObterNomeFase(void);
 
 int main(int argc, char **argv)
 {
@@ -66,7 +64,6 @@ int main(int argc, char **argv)
     renderer->InicializarGL();
 
     boidsEngine = new BoidsEngine(0.06f, 0.005f);
-    bossFSM = new BossFSM(500.0f);
 
     InicializarSistemaParticulas();
     audioManager = new AudioManager();
@@ -80,7 +77,7 @@ int main(int argc, char **argv)
     renderer->InicializarTexturaEstado(2, "assets/textures/vitoria.png");            // Vitória
     renderer->InicializarTexturaEstado(3, "assets/textures/derrota.png");            // Derrota
     renderer->InicializarTexturaEstado(4, "assets/textures/creditos.png");           // Créditos
-    renderer->InicializarTexturaEstado(5, "assets/textures/instrucoes.png");         // Instruções (Corrigido typo)
+    renderer->InicializarTexturaEstado(5, "assets/textures/instrucoes.png");         // Instruções
 
     // População inicial do enxame de boids (inimigos)
     for (int i = 0; i < 20; ++i)
@@ -102,53 +99,37 @@ int main(int argc, char **argv)
     // Desalocação segura de memória
     delete renderer;
     delete boidsEngine;
-    delete bossFSM;
     delete audioManager;
     return 0;
 }
 
-const char *ObterNomeFaseEBoss(const char *&nomeBoss)
+// Retorna o título amigável da zona anatómica atual para exibição no HUD
+const char* ObterNomeFase()
 {
     switch (telaAtual)
     {
-    case TELA_MENU:
-        nomeBoss = "Nenhum";
-        return "MENU PRINCIPAL";
-    case FASE_1_SANGUE:
-        nomeBoss = "Leukocyte Corrupto";
-        return "FASE 1 - CORRENTE SANGUINEA";
-    case FASE_2_PULMAO:
-        nomeBoss = "Pneumococo Gigante";
-        return "FASE 2 - BARREIRA PULMONAR";
-    case FASE_3_LINFATICO:
-        nomeBoss = "Nexus-7 Beta";
-        return "FASE 3 - NODULO LINFATICO";
-    case FASE_4_NERVOSO:
-        nomeBoss = "Ganglion Prime";
-        return "FASE 4 - SISTEMA NERVOSO";
-    case FASE_5_NUCLEO_VIRAL:
-        nomeBoss = "Nexus-7 Omega";
-        return "FASE 5 - NUCLEO VIRAL (FINAL)";
-    case TELA_VITORIA:
-        nomeBoss = "Nenhum";
-        return "PACIENTE SALVO! VITORIA!";
-    case TELA_DERROTA:
-        nomeBoss = "Nenhum";
-        return "GAME OVER";
-    default:
-        nomeBoss = "Nenhum";
-        return "";
+    case TELA_MENU:           return "MENU PRINCIPAL";
+    case FASE_1_SANGUE:       return "FASE 1 - CORRENTE SANGUINEA";
+    case FASE_2_PULMAO:       return "FASE 2 - BARREIRA PULMONAR";
+    case FASE_3_LINFATICO:    return "FASE 3 - NODULO LINFATICO";
+    case FASE_4_NERVOSO:      return "FASE 4 - SISTEMA NERVOSO";
+    case FASE_5_NUCLEO_VIRAL: return "FASE 5 - NUCLEO VIRAL (FINAL)";
+    case TELA_VITORIA:        return "PACIENTE SALVO! VITORIA!";
+    case TELA_DERROTA:        return "GAME OVER";
+    case TELA_CREDITOS:       return "TELA DE CREDITOS";
+    case TELA_INSTRUCOES:     return "COMO JOGAR - INSTRUCOES";
+    case TELA_FIM:            return "OBRIGADO POR JOGAR!";
+    default:                  return "";
     }
 }
 
-// Trata o clique do mouse considerando a nova imagem com os 4 botões verticais
+// Trata o clique do mouse considerando a imagem com os 4 botões verticais
 void MouseClick(int button, int state, int mouseX, int mouseY)
 {
     if (telaAtual == TELA_MENU && button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
     {
         int realMouseY = 768 - mouseY; // Inversão para o padrão ortogonal 2D
 
-        // Todos os botões estão centralizados entre X (360 e 660)
         if (mouseX >= 360 && mouseX <= 660)
         {
             // --- BOTÃO 1: START ---
@@ -182,7 +163,6 @@ void MouseClick(int button, int state, int mouseX, int mouseY)
             }
         }
     }
-    // Cliques em qualquer lugar das telas estáticas de repouso retornam com segurança ao Menu
     else if ((telaAtual == TELA_CREDITOS || telaAtual == TELA_FIM || telaAtual == TELA_INSTRUCOES) && button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
     {
         telaAtual = TELA_MENU;
@@ -191,9 +171,9 @@ void MouseClick(int button, int state, int mouseX, int mouseY)
 
 void TimerPhysics(int value)
 {
-    // Congela processamento se o jogo estiver em menus ou telas de descanso
+    // Congela a física se estivermos em telas de menu ou estados finais
     if (telaAtual == TELA_MENU || telaAtual == TELA_VITORIA ||
-        telaAtual == TELA_DERROTA || telaAtual == TELA_CREDITOS || 
+        telaAtual == TELA_DERROTA || telaAtual == TELA_CREDITOS ||
         telaAtual == TELA_FIM || telaAtual == TELA_INSTRUCOES)
     {
         glutPostRedisplay();
@@ -201,57 +181,54 @@ void TimerPhysics(int value)
         return;
     }
 
-    // 1. Atualiza FSM do Boss da fase atual
-    bossFSM->AtualizarEstado(bossHP);
-
-    // 2. Atualiza os Boids inimigos
+    // 1. Atualiza a IA dos vírus (Boids)
     boidsEngine->ProcessarEnxame(listaViruses, playerX, playerY, surgeAtivo);
 
-    // 3. Monitoramento de Derrota (HP do Paciente zerou)
+    // --- LÓGICA DE CONTENÇÃO: Mantém os vírus dentro do campo de visão ---
+    for (size_t i = 0; i < listaViruses.size(); ++i)
+    {
+        if (!listaViruses[i].ativo)
+            continue;
+
+        // Rebater nas paredes laterais
+        if (listaViruses[i].x < -6.0f)
+        {
+            listaViruses[i].x = -6.0f;
+            listaViruses[i].vx *= -1.0f;
+        }
+        else if (listaViruses[i].x > 6.0f)
+        {
+            listaViruses[i].x = 6.0f;
+            listaViruses[i].vx *= -1.0f;
+        }
+
+        // Se passar da base, volta ao topo (efeito loop)
+        if (listaViruses[i].y < -5.5f)
+        {
+            listaViruses[i].y = 5.0f;
+            listaViruses[i].x = static_cast<float>(i - 10) * 0.6f;
+        }
+    }
+
+    // 2. Monitoramento de Derrota (HSP do Paciente zerou)
     if (hsp <= 0.0f)
     {
         telaAtual = TELA_DERROTA;
     }
 
-    // 4. Progressão de Fases controlada ao derrotar o Boss
-    if (bossHP <= 0.0f)
-    {
-        if (telaAtual == FASE_5_NUCLEO_VIRAL)
-        {
-            std::cout << "Parabens! O corpo do paciente esta 100% imunizado!" << std::endl;
-            telaAtual = TELA_VITORIA;
-        }
-        else
-        {
-            int proximaFase = static_cast<int>(telaAtual) + 1;
-            telaAtual = static_cast<TelaEstado>(proximaFase);
-
-            std::cout << "Zona purificada! Avancando de fase..." << std::endl;
-            EmitirExplosao(0.0f, 0.0f, 0.0f, 0.7f, 1.0f);
-
-            bossHP = 150.0f + (proximaFase * 50.0f);
-
-            // Reorganiza as células virais no topo da tela para a nova fase
-            for (size_t i = 0; i < listaViruses.size(); ++i)
-            {
-                listaViruses[i].ativo = true;
-                listaViruses[i].y = 4.0f;
-                listaViruses[i].x = static_cast<float>(i - 10) * 0.6f;
-            }
-        }
-    }
-
-    // 5. Mecânica Completa de Colisões (Narrow Phase)
+    // 3. Mecânica de Colisões e Verificação de Onda
     SphereHitbox hitboxJogador = {playerX, playerY, 0.4f};
+    bool todosVirusMortos = true;
 
     for (size_t i = 0; i < listaViruses.size(); ++i)
     {
         if (!listaViruses[i].ativo)
             continue;
 
+        todosVirusMortos = false; // Existe pelo menos um inimigo vivo
         SphereHitbox hitboxVirus = {listaViruses[i].x, listaViruses[i].y, 0.3f};
 
-        // Colisão: Inimigo causa dano no Jogador
+        // Dano ao jogador
         if (CollisionEngine::ChecarEsferaParaEsfera(hitboxJogador, hitboxVirus))
         {
             if (!surgeAtivo)
@@ -264,7 +241,7 @@ void TimerPhysics(int value)
             }
         }
 
-        // Colisão: Ataque do Jogador destrói o Inimigo e fere o Boss
+        // Ataque do jogador
         SphereHitbox hitboxAtaque = {playerX, playerY + 0.6f, 0.5f};
 #ifdef _WIN32
         if (GetAsyncKeyState(VK_SPACE) & 0x8000)
@@ -275,13 +252,38 @@ void TimerPhysics(int value)
                 score += 100;
                 dnaColetado += 1;
                 EmitirExplosao(listaViruses[i].x, listaViruses[i].y, 0.1f, 0.9f, 0.2f);
-                bossHP -= 10.0f;
             }
         }
 #endif
     }
 
-    // Gerenciador de esvaziamento/recarga da barra de SURGE (Modo Fúria)
+    // 4. Progressão de Fase Automática
+    if (todosVirusMortos)
+    {
+        if (telaAtual == FASE_5_NUCLEO_VIRAL)
+        {
+            telaAtual = TELA_VITORIA;
+        }
+        else
+        {
+            int proximaFase = static_cast<int>(telaAtual) + 1;
+            telaAtual = static_cast<TelaEstado>(proximaFase);
+
+            EmitirExplosao(0.0f, 0.0f, 0.0f, 0.7f, 1.0f);
+
+            // Reseta enxame
+            for (size_t i = 0; i < listaViruses.size(); ++i)
+            {
+                listaViruses[i].ativo = true;
+                listaViruses[i].y = 4.0f;
+                listaViruses[i].x = static_cast<float>(i - 10) * 0.6f;
+                listaViruses[i].vx = 0.0f;
+                listaViruses[i].vy = 0.0f;
+            }
+        }
+    }
+
+    // 5. Gerenciador de SURGE
     if (surgeAtivo)
     {
         barraSurge -= 0.8f;
@@ -300,10 +302,9 @@ void TimerPhysics(int value)
     glutPostRedisplay();
     glutTimerFunc(16, TimerPhysics, 0);
 }
-
 void DisplayLoop()
 {
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
     glLoadIdentity();
 
     // ====================================================
@@ -311,97 +312,103 @@ void DisplayLoop()
     // ====================================================
     switch (telaAtual)
     {
-    case TELA_MENU:
-        renderer->RenderizarTelaEstado(0); // Imagem 0: Menu Principal (4 Botões)
-        glutSwapBuffers();
-        return;
-    case TELA_FIM:
-        renderer->RenderizarTelaEstado(1); // Imagem 1: fim.png
-        glutSwapBuffers();
-        return;
-    case TELA_VITORIA:
-        renderer->RenderizarTelaEstado(2); // Imagem 2: vitoria.png
-        glutSwapBuffers();
-        return;
-    case TELA_DERROTA:
-        renderer->RenderizarTelaEstado(3); // Imagem 3: derrota.png
-        glutSwapBuffers();
-        return;
-    case TELA_CREDITOS:
-        renderer->RenderizarTelaEstado(4); // Imagem 4: creditos.png
-        glutSwapBuffers();
-        return;
-    case TELA_INSTRUCOES:
-        renderer->RenderizarTelaEstado(5); // Imagem 5: instrucoes.png
-        glutSwapBuffers();
-        return;
-    default:
+        case TELA_MENU:
+            renderer->RenderizarTelaEstado(0); 
+            glutSwapBuffers();
+            return;
+        case TELA_FIM:
+            renderer->RenderizarTelaEstado(1); 
+            glutSwapBuffers();
+            return;
+        case TELA_VITORIA:
+            renderer->RenderizarTelaEstado(2); 
+            glutSwapBuffers();
+            return;
+        case TELA_DERROTA:
+            renderer->RenderizarTelaEstado(3); 
+            glutSwapBuffers();
+            return;
+        case TELA_CREDITOS:
+            renderer->RenderizarTelaEstado(4); 
+            glutSwapBuffers();
+            return;
+        case TELA_INSTRUCOES:
+            renderer->RenderizarTelaEstado(5); 
+            glutSwapBuffers();
+            return;
+        default:
         break;
     }
 
-    // --- RENDERIZAÇÃO DO SCENARIO DO JOGO 3D COM OS NOVOS ARQUIVOS ---
+    // --- RENDERIZAÇÃO DO CENÁRIO DO JOGO 3D ---
     renderer->ConfigurarCamera(glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT));
     renderer->AtualizarIluminacaoDinamica(playerPolaridade, playerX, playerY);
 
-    // 1. Desenho do Jogador (Utilizando o seu Leucócito .obj convertido estaticamente)
+    // ====================================================
+    // 1. DESENHO DO JOGADOR (LEUCÓCITO 3D METÁLICO/BRILHANTE)
+    // ====================================================
     glPushMatrix();
-    glTranslatef(playerX, playerY, 0.0f);
-    if (playerPolaridade == AZUL)
-        glColor3f(0.1f, 0.4f, 1.0f);
-    else
-        glColor3f(1.0f, 0.1f, 0.1f);
+        glTranslatef(playerX, playerY, 0.0f);
 
-    renderer->DesenharLeukocito(0.6f);
+        // Define as cores do material do Player dependendo da Polaridade
+        if (playerPolaridade == AZUL)
+        {
+            float matAmbDif[] = {0.1f, 0.4f, 1.0f, 1.0f}; // Azul Biológico
+            glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, matAmbDif);
+        }
+        else
+        {
+            float matAmbDif[] = {1.0f, 0.1f, 0.1f, 1.0f}; // Vermelho de Alerta
+            glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, matAmbDif);
+        }
+
+        // Configura o brilho especular (Efeito de plástico reflexivo/metalizado)
+        float matEspecularPlayer[] = {1.0f, 1.0f, 1.0f, 1.0f}; // Brilho branco puro
+        glMaterialfv(GL_FRONT, GL_SPECULAR, matEspecularPlayer);
+        glMateriali(GL_FRONT, GL_SHININESS, 128); // Brilho máximo e concentrado (0-128)
+
+        renderer->DesenharLeukocito(4.0f);
     glPopMatrix();
 
-    // 2. Desenho do Enxame de Inimigos (Alternando dinamicamente os 4 renders de vírus por fase)
+    // ====================================================
+    // 2. DESENHO DOS VÍRUS (VERDE BIOQUÍMICO COM REFLEXO ESFERICO)
+    // ====================================================
+    // Configura o material padrão para os vírus (Verde Celular Dinâmico)
+    float matAmbDifVirus[] = {0.1f, 0.8f, 0.2f, 1.0f};    // Verde limão
+    float matEspecularVirus[] = {0.6f, 1.0f, 0.6f, 1.0f}; // Brilho esverdeado nas bochechas do modelo
+
+    glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, matAmbDifVirus);
+    glMaterialfv(GL_FRONT, GL_SPECULAR, matEspecularVirus);
+    glMateriali(GL_FRONT, GL_SHININESS, 64); // Brilho ligeiramente espalhado para parecer orgânico
+
     for (const auto &v : listaViruses)
     {
         if (v.ativo)
         {
             glPushMatrix();
-            glTranslatef(v.x, v.y, 0.0f);
-            glColor3f(0.1f, 0.9f, 0.2f);
+                glTranslatef(v.x, v.y, 0.0f);
 
-            if (telaAtual == FASE_1_SANGUE)
-                renderer->DesenharVirus1(0.3f);
-            else if (telaAtual == FASE_2_PULMAO)
-                renderer->DesenharVirus2(0.3f);
-            else if (telaAtual == FASE_3_LINFATICO)
-                renderer->DesenharVirus3(0.3f);
-            else
-                renderer->DesenharVirus4(0.3f);
+                if (telaAtual == FASE_1_SANGUE)
+                    renderer->DesenharVirus1(3.5f);
+                else if (telaAtual == FASE_2_PULMAO)
+                    renderer->DesenharVirus2(3.5f);
+                else if (telaAtual == FASE_3_LINFATICO)
+                    renderer->DesenharVirus3(3.5f);
+                else
+                    renderer->DesenharVirus4(3.5f);
 
             glPopMatrix();
         }
-    }
-
-    // 3. Desenho do Boss da Fase (Mantido como Esfera Gouraud estável de CG)
-    if (telaAtual != TELA_VITORIA && telaAtual != TELA_DERROTA)
-    {
-        glPushMatrix();
-        glTranslatef(0.0f, 3.5f, 0.0f);
-
-        if (bossFSM->ObterEstadoAtual() == PATRULHA)
-            glColor3f(0.5f, 0.2f, 0.8f);
-        else if (bossFSM->ObterEstadoAtual() == AGRESSIVO)
-            glColor3f(0.8f, 0.5f, 0.0f);
-        else
-            glColor3f(1.0f, 0.0f, 0.3f);
-
-        renderer->DesenharEsferaGouraud(0.7f, 16);
-        glPopMatrix();
     }
 
     // Atualiza o motor dinâmico de partículas na tela
     AtualizarERenderizarParticulas();
 
     // Renderização Dinâmica do HUD de Texto
-    const char *nomeBossCurrent = nullptr;
-    const char *nomeFaseCurrent = ObterNomeFaseEBoss(nomeBossCurrent);
+    const char* nomeFaseCurrent = ObterNomeFase();
 
     char bufferHUD[128];
-    sprintf(bufferHUD, "%s  |  BOSS: %s (HP: %.0f)", nomeFaseCurrent, nomeBossCurrent, (bossHP > 0 ? bossHP : 0));
+    sprintf(bufferHUD, "ANATOMIA: %s  |  INIMIGOS ATIVOS: %d", nomeFaseCurrent, (int)listaViruses.size());
     renderer->RenderizarTextoHUD(15.0f, 570.0f, bufferHUD, GLUT_BITMAP_HELVETICA_18);
 
     sprintf(bufferHUD, "PACIENTE HSP: %.1f%%  |  SCORE: %d  |  SURGE: %.0f%%  |  DNA: %d", hsp, score, barraSurge, dnaColetado);
@@ -417,13 +424,34 @@ void ReshapeCallback(int w, int h)
 
 void KeyboardDown(unsigned char key, int x, int y)
 {
-    if (telaAtual == TELA_MENU || telaAtual == TELA_VITORIA || telaAtual == TELA_DERROTA || telaAtual == TELA_CREDITOS || telaAtual == TELA_FIM || telaAtual == TELA_INSTRUCOES)
+    // Verifica se estamos em um dos estados finais
+    if (telaAtual == TELA_VITORIA || telaAtual == TELA_DERROTA || telaAtual == TELA_FIM)
+    {
+        // Qualquer tecla pressionada (incluindo ESC) retorna ao menu
+        telaAtual = TELA_MENU;
+
+        // Opcional: Resetar variáveis de jogo para um novo início limpo
+        hsp = 100.0f;
+        score = 0;
+        dnaColetado = 0;
+        // Reinicializa a posição dos vírus se necessário
+        for (size_t i = 0; i < listaViruses.size(); ++i)
+        {
+            listaViruses[i].ativo = true;
+            listaViruses[i].y = 4.0f;
+        }
+        return;
+    }
+
+    // Comportamento normal para o Menu (apenas ESC sai)
+    if (telaAtual == TELA_MENU || telaAtual == TELA_CREDITOS || telaAtual == TELA_INSTRUCOES)
     {
         if (key == 27)
             exit(0);
         return;
     }
 
+    // Movimentação e ações de jogo (apenas enquanto estiver jogando)
     float passoMovimento = 0.25f;
     switch (key)
     {
@@ -443,22 +471,20 @@ void KeyboardDown(unsigned char key, int x, int y)
     case 'D':
         playerX += passoMovimento;
         break;
-    case 32: // Espaço (Atirar)
+    case 32: // Espaço
         audioManager->TocarLaser();
         EmitirExplosao(playerX, playerY + 0.5f, 1.0f, 1.0f, 1.0f);
         break;
     case 'q':
-    case 'Q': // Ativar o Modo SURGE
+    case 'Q': // Modo SURGE
         if (barraSurge >= 100.0f)
         {
             surgeAtivo = true;
             audioManager->TocarSurge();
             EmitirExplosao(playerX, playerY, 1.0f, 0.7f, 0.0f);
-            if (telaAtual != TELA_VITORIA)
-                bossHP -= 50.0f;
         }
         break;
-    case 27:
+    case 27: // ESC
         audioManager->LimparAudio();
         exit(0);
         break;

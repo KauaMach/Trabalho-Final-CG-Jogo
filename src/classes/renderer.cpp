@@ -17,18 +17,26 @@ Renderer::Renderer() : cameraX(0.0f), cameraY(0.0f), cameraZ(15.0f), targetX(0.0
 Renderer::~Renderer() {}
 
 void Renderer::InicializarGL() {
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f); // Fundo preto celular
     glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LEQUAL);
-    
-    glShadeModel(GL_SMOOTH);
-    glEnable(GL_LIGHTING);
-    glEnable(GL_LIGHT0);
-    
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    
+    glDepthFunc(GL_LESS);
+
+    // ====================================================
+    // --- CONFIGURAÇÃO OTIMIZADA DE ILUMINAÇÃO (3D) ---
+    // ====================================================
+    glEnable(GL_LIGHTING); // Ativa o motor de iluminação
+    glEnable(GL_LIGHT0);   // Ativa a primeira fonte de luz
+
+    // Força o OpenGL a corrigir as normais após aplicar a escala (Evita que os modelos fiquem escuros)
+    glEnable(GL_NORMALIZE);
+
+    // Ativa o rastreio de cor para que o glColor3f funcione perfeitamente com a luz
     glEnable(GL_COLOR_MATERIAL);
     glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
+
+    // Configura uma luz ambiente global suave (para não termos sombras pretas absolutas)
+    float luzAmbienteGlobal[] = {0.3f, 0.3f, 0.3f, 1.0f};
+    glLightModelfv(GL_LIGHT_MODEL_AMBIENT, luzAmbienteGlobal); // Permite que glColor3f funcione com luz
 }
 
 void Renderer::ConfigurarCamera(int width, int height) {
@@ -47,25 +55,29 @@ void Renderer::ConfigurarCamera(int width, int height) {
 }
 
 void Renderer::AtualizarIluminacaoDinamica(Polaridade polaridade, float playerX, float playerY) {
-    GLfloat luzAmbiente[] = { 0.15f, 0.15f, 0.15f, 1.0f };
-    glLightModelfv(GL_LIGHT_MODEL_AMBIENT, luzAmbiente);
+    // Certifique-se de que a sua luz está configurada com valores altos (1.0f) na difusa e especular:
+    float luzAmbiente[] = {0.2f, 0.2f, 0.2f, 1.0f};
+    float luzDifusa[] = {1.0f, 1.0f, 1.0f, 1.0f};    // Branco total
+    float luzEspecular[] = {1.0f, 1.0f, 1.0f, 1.0f}; // Branco total para criar o ponto de brilho
 
-    GLfloat posicaoLuz[] = { playerX, playerY, 1.5f, 1.0f }; 
-    GLfloat corLuz[4];
+    glLightfv(GL_LIGHT0, GL_AMBIENT, luzAmbiente);
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, luzDifusa);
+    glLightfv(GL_LIGHT0, GL_SPECULAR, luzEspecular); // Brilho nos reflexos das curvas
 
-    if (polaridade == AZUL) {
-        corLuz[0] = 0.0f; corLuz[1] = 0.5f; corLuz[2] = 1.0f; corLuz[3] = 1.0f;
-    } else {
-        corLuz[0] = 1.0f; corLuz[1] = 0.1f; corLuz[2] = 0.1f; corLuz[3] = 1.0f;
-    }
-
+    // 2. Posicionamento da Luz: Ligeiramente acima e à frente do ecrã (Efeito Holofote)
+    // O quarto valor sendo 1.0f transforma a luz numa fonte posicional (Direct / Point Light)
+    float posicaoLuz[] = {0.0f, 5.0f, 4.0f, 1.0f};
     glLightfv(GL_LIGHT0, GL_POSITION, posicaoLuz);
-    glLightfv(GL_LIGHT0, GL_DIFFUSE, corLuz);
-    glLightfv(GL_LIGHT0, GL_SPECULAR, corLuz);
-    
-    glLightf(GL_LIGHT0, GL_CONSTANT_ATTENUATION, 0.5f);
-    glLightf(GL_LIGHT0, GL_LINEAR_ATTENUATION, 0.1f);
-    glLightf(GL_LIGHT0, GL_QUADRATIC_ATTENUATION, 0.02f);
+
+    // 3. Opcional: Configura o "brilho" do material plástico/celular dos vírus
+    float especularMaterial[] = {0.8f, 0.8f, 0.8f, 1.0f};
+    glMaterialfv(GL_FRONT, GL_SPECULAR, especularMaterial);
+    glMateriali(GL_FRONT, GL_SHININESS, 64);
+
+    // 4. Opcional: Configura o "brilho" do material plástico/celular do jogador
+    float especularMaterialPlayer[] = {0.8f, 0.8f, 0.8f, 1.0f};
+    glMaterialfv(GL_FRONT, GL_SPECULAR, especularMaterialPlayer);
+    glMateriali(GL_FRONT, GL_SHININESS, 64);
 }
 
 unsigned int Renderer::CarregarTextura(const char* caminhoArquivo) {

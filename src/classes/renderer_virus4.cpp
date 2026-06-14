@@ -19351,7 +19351,8 @@ void Renderer::DesenharVirus4(float tamanho) {
         glVertex3f(0.2993f * s, -0.0054f * s, -0.2190f * s);
         glVertex3f(0.2985f * s, 0.0012f * s, -0.2203f * s);
         glVertex3f(0.3546f * s, -0.0591f * s, -0.2934f * s);
-        glVertex3f(0.3566f * s, -0.0562f * s, -0.2991f * s);
-        glVertex3f(0.3591f * s, -0.0620f * s, -0.2988f * s);
+        glVertex3f(0.3140f * s, -0.1546f * s, -0.2792f * s);
+        glVertex3f(0.3224f * s, -0.1570f * s, -0.2885f * s);
+        glVertex3f(0.3566f * s, -0.0562f * s, -0.2110f * s);
     glEnd();
 }

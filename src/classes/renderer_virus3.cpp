@@ -19587,5 +19587,6 @@ void Renderer::DesenharVirus3(float tamanho) {
         glVertex3f(0.3662f * s, 0.0996f * s, -0.2153f * s);
         glVertex3f(0.3630f * s, 0.1008f * s, -0.2182f * s);
         glVertex3f(0.3644f * s, 0.1043f * s, -0.2176f * s);
+        glVertex3f(0.2246f * s, 0.1788f * s, -0.1982f * s);
     glEnd();
 }
