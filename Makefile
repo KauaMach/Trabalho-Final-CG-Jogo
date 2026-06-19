@@ -1,9 +1,26 @@
 CXX = g++
-CXXFLAGS = -std=c++17 -Wall -Wextra -O0 -I./src/bibliotecas -I./src
-LIBS = -lmingw32 -lfreeglut -lopengl32 -lglu32 -lSDL2main -lSDL2 -lSDL2_mixer -mconsole
-TARGET = imunidade_jogo.exe
+CXXFLAGS = -std=c++17 -Wall -Wextra -O2 -I./src/bibliotecas -I./src
 
-# LISTA ATUALIZADA COM OS DOIS FICHEIROS SEPARADOS
+# Detecção de plataforma: Windows / macOS / Linux
+ifeq ($(OS),Windows_NT)
+    LIBS = -lmingw32 -lfreeglut -lopengl32 -lglu32 -lSDL2main -lSDL2 -lSDL2_mixer -mconsole
+    TARGET = imunidade_jogo.exe
+    CLEAN_COMMAND = @if exist src\\main.o del /Q src\\main.o && if exist src\\classes\\*.o del /Q src\\classes\\*.o && if exist $(TARGET) del /Q $(TARGET)
+else
+    UNAME_S := $(shell uname -s)
+    ifeq ($(UNAME_S),Darwin)
+        # macOS — Frameworks do sistema + SDL2 via Homebrew
+        LIBS = -framework OpenGL -framework GLUT -framework Cocoa -lSDL2 -lSDL2_mixer
+        TARGET = imunidade_jogo
+    else
+        # Linux — Pacotes do sistema
+        LIBS = -lglut -lGL -lGLU -lSDL2 -lSDL2_mixer
+        TARGET = imunidade_jogo
+    endif
+    CLEAN_COMMAND = rm -f src/main.o src/classes/*.o $(TARGET)
+endif
+
+# Lista de ficheiros-fonte
 SRC = src/main.cpp \
       src/classes/renderer.cpp \
       src/classes/renderer_menu.cpp \
@@ -32,9 +49,7 @@ $(TARGET): $(OBJ)
 
 clean:
 	@echo Limpando arquivos temporarios...
-	@if exist src\main.o del /Q src\main.o
-	@if exist src\classes\*.o del /Q src\classes\*.o
-	@if exist $(TARGET) del /Q $(TARGET)
+	$(CLEAN_COMMAND)
 	@echo Limpeza concluida!
 
 .PHONY: all clean

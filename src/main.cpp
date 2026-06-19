@@ -7,9 +7,6 @@
 #include <vector>
 #include <iostream>
 
-#ifdef _WIN32
-#include <windows.h>
-#endif
 
 // Instanciação dos Módulos Principais
 Renderer *renderer = nullptr;
@@ -41,6 +38,7 @@ float barraSurge = 0.0f;
 bool surgeAtivo = false;
 int score = 0, combo = 1, dnaColetado = 0;
 float hsp = 100.0f;
+bool spacePressionado = false;
 
 std::vector<Boid> listaViruses;
 
@@ -48,6 +46,7 @@ std::vector<Boid> listaViruses;
 void DisplayLoop();
 void ReshapeCallback(int w, int h);
 void KeyboardDown(unsigned char key, int x, int y);
+void KeyboardUp(unsigned char key, int x, int y);
 void SpecialKeys(int key, int x, int y);
 void MouseClick(int button, int state, int mouseX, int mouseY);
 void TimerPhysics(int value);
@@ -89,6 +88,7 @@ int main(int argc, char **argv)
     glutDisplayFunc(DisplayLoop);
     glutReshapeFunc(ReshapeCallback);
     glutKeyboardFunc(KeyboardDown);
+    glutKeyboardUpFunc(KeyboardUp);
     glutSpecialFunc(SpecialKeys);
     glutMouseFunc(MouseClick);
     glutTimerFunc(16, TimerPhysics, 0);
@@ -104,22 +104,34 @@ int main(int argc, char **argv)
 }
 
 // Retorna o título amigável da zona anatómica atual para exibição no HUD
-const char* ObterNomeFase()
+const char *ObterNomeFase()
 {
     switch (telaAtual)
     {
-    case TELA_MENU:           return "MENU PRINCIPAL";
-    case FASE_1_SANGUE:       return "FASE 1 - CORRENTE SANGUINEA";
-    case FASE_2_PULMAO:       return "FASE 2 - BARREIRA PULMONAR";
-    case FASE_3_LINFATICO:    return "FASE 3 - NODULO LINFATICO";
-    case FASE_4_NERVOSO:      return "FASE 4 - SISTEMA NERVOSO";
-    case FASE_5_NUCLEO_VIRAL: return "FASE 5 - NUCLEO VIRAL (FINAL)";
-    case TELA_VITORIA:        return "PACIENTE SALVO! VITORIA!";
-    case TELA_DERROTA:        return "GAME OVER";
-    case TELA_CREDITOS:       return "TELA DE CREDITOS";
-    case TELA_INSTRUCOES:     return "COMO JOGAR - INSTRUCOES";
-    case TELA_FIM:            return "OBRIGADO POR JOGAR!";
-    default:                  return "";
+    case TELA_MENU:
+        return "MENU PRINCIPAL";
+    case FASE_1_SANGUE:
+        return "FASE 1 - CORRENTE SANGUINEA";
+    case FASE_2_PULMAO:
+        return "FASE 2 - BARREIRA PULMONAR";
+    case FASE_3_LINFATICO:
+        return "FASE 3 - NODULO LINFATICO";
+    case FASE_4_NERVOSO:
+        return "FASE 4 - SISTEMA NERVOSO";
+    case FASE_5_NUCLEO_VIRAL:
+        return "FASE 5 - NUCLEO VIRAL (FINAL)";
+    case TELA_VITORIA:
+        return "PACIENTE SALVO! VITORIA!";
+    case TELA_DERROTA:
+        return "GAME OVER";
+    case TELA_CREDITOS:
+        return "TELA DE CREDITOS";
+    case TELA_INSTRUCOES:
+        return "COMO JOGAR - INSTRUCOES";
+    case TELA_FIM:
+        return "OBRIGADO POR JOGAR!";
+    default:
+        return "";
     }
 }
 
@@ -241,10 +253,9 @@ void TimerPhysics(int value)
             }
         }
 
-        // Ataque do jogador
+        // Ataque do jogador (cross-platform via flag GLUT)
         SphereHitbox hitboxAtaque = {playerX, playerY + 0.6f, 0.5f};
-#ifdef _WIN32
-        if (GetAsyncKeyState(VK_SPACE) & 0x8000)
+        if (spacePressionado)
         {
             if (CollisionEngine::ChecarEsferaParaEsfera(hitboxAtaque, hitboxVirus))
             {
@@ -254,7 +265,6 @@ void TimerPhysics(int value)
                 EmitirExplosao(listaViruses[i].x, listaViruses[i].y, 0.1f, 0.9f, 0.2f);
             }
         }
-#endif
     }
 
     // 4. Progressão de Fase Automática
@@ -304,7 +314,7 @@ void TimerPhysics(int value)
 }
 void DisplayLoop()
 {
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glLoadIdentity();
 
     // ====================================================
@@ -312,31 +322,31 @@ void DisplayLoop()
     // ====================================================
     switch (telaAtual)
     {
-        case TELA_MENU:
-            renderer->RenderizarTelaEstado(0); 
-            glutSwapBuffers();
-            return;
-        case TELA_FIM:
-            renderer->RenderizarTelaEstado(1); 
-            glutSwapBuffers();
-            return;
-        case TELA_VITORIA:
-            renderer->RenderizarTelaEstado(2); 
-            glutSwapBuffers();
-            return;
-        case TELA_DERROTA:
-            renderer->RenderizarTelaEstado(3); 
-            glutSwapBuffers();
-            return;
-        case TELA_CREDITOS:
-            renderer->RenderizarTelaEstado(4); 
-            glutSwapBuffers();
-            return;
-        case TELA_INSTRUCOES:
-            renderer->RenderizarTelaEstado(5); 
-            glutSwapBuffers();
-            return;
-        default:
+    case TELA_MENU:
+        renderer->RenderizarTelaEstado(0);
+        glutSwapBuffers();
+        return;
+    case TELA_FIM:
+        renderer->RenderizarTelaEstado(1);
+        glutSwapBuffers();
+        return;
+    case TELA_VITORIA:
+        renderer->RenderizarTelaEstado(2);
+        glutSwapBuffers();
+        return;
+    case TELA_DERROTA:
+        renderer->RenderizarTelaEstado(3);
+        glutSwapBuffers();
+        return;
+    case TELA_CREDITOS:
+        renderer->RenderizarTelaEstado(4);
+        glutSwapBuffers();
+        return;
+    case TELA_INSTRUCOES:
+        renderer->RenderizarTelaEstado(5);
+        glutSwapBuffers();
+        return;
+    default:
         break;
     }
 
@@ -348,26 +358,26 @@ void DisplayLoop()
     // 1. DESENHO DO JOGADOR (LEUCÓCITO 3D METÁLICO/BRILHANTE)
     // ====================================================
     glPushMatrix();
-        glTranslatef(playerX, playerY, 0.0f);
+    glTranslatef(playerX, playerY, 0.0f);
 
-        // Define as cores do material do Player dependendo da Polaridade
-        if (playerPolaridade == AZUL)
-        {
-            float matAmbDif[] = {0.1f, 0.4f, 1.0f, 1.0f}; // Azul Biológico
-            glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, matAmbDif);
-        }
-        else
-        {
-            float matAmbDif[] = {1.0f, 0.1f, 0.1f, 1.0f}; // Vermelho de Alerta
-            glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, matAmbDif);
-        }
+    // Define as cores do material do Player dependendo da Polaridade
+    if (playerPolaridade == AZUL)
+    {
+        float matAmbDif[] = {0.1f, 0.4f, 1.0f, 1.0f}; // Azul Biológico
+        glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, matAmbDif);
+    }
+    else
+    {
+        float matAmbDif[] = {1.0f, 0.1f, 0.1f, 1.0f}; // Vermelho de Alerta
+        glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, matAmbDif);
+    }
 
-        // Configura o brilho especular (Efeito de plástico reflexivo/metalizado)
-        float matEspecularPlayer[] = {1.0f, 1.0f, 1.0f, 1.0f}; // Brilho branco puro
-        glMaterialfv(GL_FRONT, GL_SPECULAR, matEspecularPlayer);
-        glMateriali(GL_FRONT, GL_SHININESS, 128); // Brilho máximo e concentrado (0-128)
+    // Configura o brilho especular (Efeito de plástico reflexivo/metalizado)
+    float matEspecularPlayer[] = {1.0f, 1.0f, 1.0f, 1.0f}; // Brilho branco puro
+    glMaterialfv(GL_FRONT, GL_SPECULAR, matEspecularPlayer);
+    glMateriali(GL_FRONT, GL_SHININESS, 128); // Brilho máximo e concentrado (0-128)
 
-        renderer->DesenharLeukocito(4.0f);
+    renderer->DesenharLeukocito(4.0f);
     glPopMatrix();
 
     // ====================================================
@@ -386,16 +396,16 @@ void DisplayLoop()
         if (v.ativo)
         {
             glPushMatrix();
-                glTranslatef(v.x, v.y, 0.0f);
+            glTranslatef(v.x, v.y, 0.0f);
 
-                if (telaAtual == FASE_1_SANGUE)
-                    renderer->DesenharVirus1(3.5f);
-                else if (telaAtual == FASE_2_PULMAO)
-                    renderer->DesenharVirus2(3.5f);
-                else if (telaAtual == FASE_3_LINFATICO)
-                    renderer->DesenharVirus3(3.5f);
-                else
-                    renderer->DesenharVirus4(3.5f);
+            if (telaAtual == FASE_1_SANGUE)
+                renderer->DesenharVirus1(3.5f);
+            else if (telaAtual == FASE_2_PULMAO)
+                renderer->DesenharVirus2(3.5f);
+            else if (telaAtual == FASE_3_LINFATICO)
+                renderer->DesenharVirus3(3.5f);
+            else
+                renderer->DesenharVirus4(3.5f);
 
             glPopMatrix();
         }
@@ -405,14 +415,14 @@ void DisplayLoop()
     AtualizarERenderizarParticulas();
 
     // Renderização Dinâmica do HUD de Texto
-    const char* nomeFaseCurrent = ObterNomeFase();
+    const char *nomeFaseCurrent = ObterNomeFase();
 
     char bufferHUD[128];
     sprintf(bufferHUD, "ANATOMIA: %s  |  INIMIGOS ATIVOS: %d", nomeFaseCurrent, (int)listaViruses.size());
-    renderer->RenderizarTextoHUD(15.0f, 570.0f, bufferHUD, GLUT_BITMAP_HELVETICA_18);
+    renderer->RenderizarTextoHUD(20.0f, 740.0f, bufferHUD, GLUT_BITMAP_HELVETICA_18);
 
     sprintf(bufferHUD, "PACIENTE HSP: %.1f%%  |  SCORE: %d  |  SURGE: %.0f%%  |  DNA: %d", hsp, score, barraSurge, dnaColetado);
-    renderer->RenderizarTextoHUD(15.0f, 545.0f, bufferHUD, GLUT_BITMAP_HELVETICA_12);
+    renderer->RenderizarTextoHUD(20.0f, 715.0f, bufferHUD, GLUT_BITMAP_HELVETICA_12);
 
     glutSwapBuffers();
 }
@@ -472,11 +482,12 @@ void KeyboardDown(unsigned char key, int x, int y)
         playerX += passoMovimento;
         break;
     case 32: // Espaço
+        spacePressionado = true;
         audioManager->TocarLaser();
         EmitirExplosao(playerX, playerY + 0.5f, 1.0f, 1.0f, 1.0f);
         break;
     case 'q':
-    case 'Q': // Modo SURGE
+    case 'Q': // Modo SURGEl
         if (barraSurge >= 100.0f)
         {
             surgeAtivo = true;
@@ -488,6 +499,15 @@ void KeyboardDown(unsigned char key, int x, int y)
         audioManager->LimparAudio();
         exit(0);
         break;
+    }
+}
+
+void KeyboardUp(unsigned char key, int x, int y)
+{
+    (void)x; (void)y;
+    if (key == 32) // Espaço solto
+    {
+        spacePressionado = false;
     }
 }
 

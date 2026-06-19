@@ -9,7 +9,7 @@
 
 Renderer::Renderer() : cameraX(0.0f), cameraY(0.0f), cameraZ(15.0f), targetX(0.0f), targetY(0.0f), targetZ(0.0f) {
     // Inicializa o array de texturas com zero para segurança
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < 6; i++) {
         texturasID[i] = 0;
     }
 }
@@ -55,28 +55,30 @@ void Renderer::ConfigurarCamera(int width, int height) {
 }
 
 void Renderer::AtualizarIluminacaoDinamica(Polaridade polaridade, float playerX, float playerY) {
-    // Certifique-se de que a sua luz está configurada com valores altos (1.0f) na difusa e especular:
+    // 1. Luz ambiente suave
     float luzAmbiente[] = {0.2f, 0.2f, 0.2f, 1.0f};
-    float luzDifusa[] = {1.0f, 1.0f, 1.0f, 1.0f};    // Branco total
-    float luzEspecular[] = {1.0f, 1.0f, 1.0f, 1.0f}; // Branco total para criar o ponto de brilho
-
     glLightfv(GL_LIGHT0, GL_AMBIENT, luzAmbiente);
-    glLightfv(GL_LIGHT0, GL_DIFFUSE, luzDifusa);
-    glLightfv(GL_LIGHT0, GL_SPECULAR, luzEspecular); // Brilho nos reflexos das curvas
 
-    // 2. Posicionamento da Luz: Ligeiramente acima e à frente do ecrã (Efeito Holofote)
-    // O quarto valor sendo 1.0f transforma a luz numa fonte posicional (Direct / Point Light)
-    float posicaoLuz[] = {0.0f, 5.0f, 4.0f, 1.0f};
+    // 2. Luz difusa tingida pela polaridade ativa (azul frio vs. vermelho quente)
+    float luzDifusa[4];
+    float luzEspecular[4];
+    if (polaridade == AZUL) {
+        luzDifusa[0] = 0.6f; luzDifusa[1] = 0.8f; luzDifusa[2] = 1.0f; luzDifusa[3] = 1.0f;
+        luzEspecular[0] = 0.7f; luzEspecular[1] = 0.9f; luzEspecular[2] = 1.0f; luzEspecular[3] = 1.0f;
+    } else {
+        luzDifusa[0] = 1.0f; luzDifusa[1] = 0.6f; luzDifusa[2] = 0.5f; luzDifusa[3] = 1.0f;
+        luzEspecular[0] = 1.0f; luzEspecular[1] = 0.7f; luzEspecular[2] = 0.6f; luzEspecular[3] = 1.0f;
+    }
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, luzDifusa);
+    glLightfv(GL_LIGHT0, GL_SPECULAR, luzEspecular);
+
+    // 3. Posição da luz acompanha o jogador (ligeiramente acima e à frente)
+    float posicaoLuz[] = {playerX, playerY + 3.0f, 4.0f, 1.0f};
     glLightfv(GL_LIGHT0, GL_POSITION, posicaoLuz);
 
-    // 3. Opcional: Configura o "brilho" do material plástico/celular dos vírus
+    // 4. Material especular padrão para entidades
     float especularMaterial[] = {0.8f, 0.8f, 0.8f, 1.0f};
     glMaterialfv(GL_FRONT, GL_SPECULAR, especularMaterial);
-    glMateriali(GL_FRONT, GL_SHININESS, 64);
-
-    // 4. Opcional: Configura o "brilho" do material plástico/celular do jogador
-    float especularMaterialPlayer[] = {0.8f, 0.8f, 0.8f, 1.0f};
-    glMaterialfv(GL_FRONT, GL_SPECULAR, especularMaterialPlayer);
     glMateriali(GL_FRONT, GL_SHININESS, 64);
 }
 
@@ -110,7 +112,7 @@ unsigned int Renderer::CarregarTextura(const char* caminhoArquivo) {
 void Renderer::RenderizarTextoHUD(float x, float y, const char* texto, void* fonte) {
     glMatrixMode(GL_PROJECTION);
     glPushMatrix(); glLoadIdentity();
-    gluOrtho2D(0, 800, 0, 600);
+    gluOrtho2D(0, 1024, 0, 768);
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix(); glLoadIdentity();
     glDisable(GL_LIGHTING);

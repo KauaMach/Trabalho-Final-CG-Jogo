@@ -52,6 +52,10 @@ void AtualizarERenderizarParticulas()
 {
     // Desabilita a iluminação para que as partículas tenham "luz própria" (efeito de brilho/glow)
     glDisable(GL_LIGHTING);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDepthMask(GL_FALSE); // Evita que partículas translúcidas escrevam no z-buffer
+    glPointSize(3.0f);     // Partículas mais visíveis
 
     glBegin(GL_POINTS);
     for (int i = 0; i < MAX_PARTICULAS; ++i)
@@ -81,6 +85,9 @@ void AtualizarERenderizarParticulas()
     }
     glEnd();
 
-    // Reativa a iluminação padrão do cenário para as demais entidades do jogo
+    // Restaura o estado do OpenGL para as demais entidades do jogo
+    glDepthMask(GL_TRUE);
+    glDisable(GL_BLEND);
+    glPointSize(1.0f);
     glEnable(GL_LIGHTING);
 }
