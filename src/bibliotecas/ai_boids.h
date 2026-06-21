@@ -18,8 +18,7 @@ private:
     float maxVelocidade;
     float maxForca;
 
-    // Pesos de comportamento configuráveis do enxame viral
-    float pesoSeparacao = 1.5f;
+    float pesoSeparacao = 2.5f;
     float pesoAlinhamento = 1.0f;
     float pesoCoesao = 1.0f;
 

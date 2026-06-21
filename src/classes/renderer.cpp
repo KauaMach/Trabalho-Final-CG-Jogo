@@ -9,7 +9,7 @@
 
 Renderer::Renderer() : cameraX(0.0f), cameraY(0.0f), cameraZ(15.0f), targetX(0.0f), targetY(0.0f), targetZ(0.0f) {
     // Inicializa o array de texturas com zero para segurança
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < 6; i++) {
         texturasID[i] = 0;
     }
 }
@@ -21,9 +21,6 @@ void Renderer::InicializarGL() {
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
 
-    // ====================================================
-    // --- CONFIGURAÇÃO OTIMIZADA DE ILUMINAÇÃO (3D) ---
-    // ====================================================
     glEnable(GL_LIGHTING); // Ativa o motor de iluminação
     glEnable(GL_LIGHT0);   // Ativa a primeira fonte de luz
 
@@ -37,6 +34,10 @@ void Renderer::InicializarGL() {
     // Configura uma luz ambiente global suave (para não termos sombras pretas absolutas)
     float luzAmbienteGlobal[] = {0.3f, 0.3f, 0.3f, 1.0f};
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, luzAmbienteGlobal); // Permite que glColor3f funcione com luz
+
+    float luzBranca[] = {1.0f, 1.0f, 1.0f, 1.0f};
+    glLightfv(GL_LIGHT0, GL_SPECULAR, luzBranca); // Garante que a luz pode criar reflexos brancos
+    glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, GL_TRUE);
 }
 
 void Renderer::ConfigurarCamera(int width, int height) {
@@ -54,55 +55,49 @@ void Renderer::ConfigurarCamera(int width, int height) {
     gluLookAt(cameraX, cameraY, cameraZ, targetX, targetY, targetZ, 0.0f, 1.0f, 0.0f);
 }
 
-void Renderer::AtualizarIluminacaoDinamica(Polaridade polaridade, float playerX, float playerY) {
-    // Certifique-se de que a sua luz está configurada com valores altos (1.0f) na difusa e especular:
-    float luzAmbiente[] = {0.2f, 0.2f, 0.2f, 1.0f};
-    float luzDifusa[] = {1.0f, 1.0f, 1.0f, 1.0f};    // Branco total
-    float luzEspecular[] = {1.0f, 1.0f, 1.0f, 1.0f}; // Branco total para criar o ponto de brilho
+void Renderer::AtualizarIluminacaoDinamica(float playerX, float playerY)
+{
+    glEnable(GL_LIGHTING);
+    glEnable(GL_LIGHT0);
 
-    glLightfv(GL_LIGHT0, GL_AMBIENT, luzAmbiente);
+    // Luz branca neutra (biológica/limpa)
+    float luzDifusa[] = {1.0f, 1.0f, 1.0f, 1.0f};
+    float luzEspecular[] = {1.0f, 1.0f, 1.0f, 1.0f};
+    float luzAmbiente[] = {0.3f, 0.3f, 0.3f, 1.0f};
+
     glLightfv(GL_LIGHT0, GL_DIFFUSE, luzDifusa);
-    glLightfv(GL_LIGHT0, GL_SPECULAR, luzEspecular); // Brilho nos reflexos das curvas
+    glLightfv(GL_LIGHT0, GL_SPECULAR, luzEspecular);
+    glLightfv(GL_LIGHT0, GL_AMBIENT, luzAmbiente);
 
-    // 2. Posicionamento da Luz: Ligeiramente acima e à frente do ecrã (Efeito Holofote)
-    // O quarto valor sendo 1.0f transforma a luz numa fonte posicional (Direct / Point Light)
-    float posicaoLuz[] = {0.0f, 5.0f, 4.0f, 1.0f};
+    // A luz segue a posição do player (efeito holofote)
+    float posicaoLuz[] = {playerX, playerY, 2.0f, 1.0f};
     glLightfv(GL_LIGHT0, GL_POSITION, posicaoLuz);
-
-    // 3. Opcional: Configura o "brilho" do material plástico/celular dos vírus
-    float especularMaterial[] = {0.8f, 0.8f, 0.8f, 1.0f};
-    glMaterialfv(GL_FRONT, GL_SPECULAR, especularMaterial);
-    glMateriali(GL_FRONT, GL_SHININESS, 64);
-
-    // 4. Opcional: Configura o "brilho" do material plástico/celular do jogador
-    float especularMaterialPlayer[] = {0.8f, 0.8f, 0.8f, 1.0f};
-    glMaterialfv(GL_FRONT, GL_SPECULAR, especularMaterialPlayer);
-    glMateriali(GL_FRONT, GL_SHININESS, 64);
 }
 
 unsigned int Renderer::CarregarTextura(const char* caminhoArquivo) {
-    unsigned int texID;
-    glGenTextures(1, &texID);
-    glBindTexture(GL_TEXTURE_2D, texID);
-
     int width, height, nrChannels;
     stbi_set_flip_vertically_on_load(true); // Correção de orientação vertical de cabeça para baixo
     
     unsigned char *data = stbi_load(caminhoArquivo, &width, &height, &nrChannels, 0);
-    
-    if (data) {
-        GLenum formato = (nrChannels == 4) ? GL_RGBA : GL_RGB;
-        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-        glTexImage2D(GL_TEXTURE_2D, 0, formato, width, height, 0, formato, GL_UNSIGNED_BYTE, data);
-        
-        // Filtros bilineares clássicos recomendados para compatibilidade e performance
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    } else {
+    if (!data) {
         std::cout << "Erro: Arquivo de imagem nao encontrado em: " << caminhoArquivo << std::endl;
+        return 0;
     }
+
+    unsigned int texID;
+    glGenTextures(1, &texID);
+    glBindTexture(GL_TEXTURE_2D, texID);
+
+    GLenum formato = (nrChannels == 4) ? GL_RGBA : GL_RGB;
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glTexImage2D(GL_TEXTURE_2D, 0, formato, width, height, 0, formato, GL_UNSIGNED_BYTE, data);
+    
+    // Filtros bilineares clássicos recomendados para compatibilidade e performance
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
     stbi_image_free(data);
     return texID;
 }
@@ -124,6 +119,35 @@ void Renderer::RenderizarTextoHUD(float x, float y, const char* texto, void* fon
     glPopMatrix(); glMatrixMode(GL_MODELVIEW);
 }
 
+void Renderer::CompilarModelos()
+{
+    for (int i = 0; i < 5; i++)
+    {
+        displayLists[i] = glGenLists(1);
+        glNewList(displayLists[i], GL_COMPILE);
+
+        switch (i)
+        {
+        case 0:
+            DesenharLeukocito(4.0f); 
+            break;
+        case 1:
+            DesenharVirus1(3.5f);
+            break;
+        case 2: 
+            DesenharVirus2(3.5f);
+            break;
+        case 3:
+            DesenharVirus3(3.5f);
+            break;
+        case 4:
+            DesenharVirus4(3.5f);
+            break;
+        }
+
+        glEndList();
+    }
+}
 void Renderer::DesenharEsferaGouraud(float raio, int subdivisoes)
 {
     for (int i = 0; i < subdivisoes; ++i)

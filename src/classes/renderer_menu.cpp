@@ -1,23 +1,30 @@
 #include "../bibliotecas/renderer.h"
 
+/**
+ * @brief Inicializa uma textura para um estado específico
+ * @param indiceEstado Índice do estado para o qual inicializar a textura
+ * @param caminhoImagem Caminho para o arquivo de imagem da textura
+ */
 void Renderer::InicializarTexturaEstado(int indiceEstado, const char *caminhoImagem)
 {
-    if (indiceEstado >= 0 && indiceEstado < 6)
-    {
-        texturasID[indiceEstado] = CarregarTextura(caminhoImagem); // Mapeia na memória [cite: 672, 673]
-    }
+    if (indiceEstado >= 0 && indiceEstado < 7)
+        texturasID[indiceEstado] = CarregarTextura(caminhoImagem);
+    
 }
 
-// 2. Renderiza qualquer tela usando uma única lógica reaproveitável
+/**
+ * @brief Renderiza a tela correspondente ao estado atual
+ * @param indiceEstado Índice do estado a ser renderizado
+ */
 void Renderer::RenderizarTelaEstado(int indiceEstado)
 {
-    if (indiceEstado < 0 || indiceEstado >= 6 || texturasID[indiceEstado] == 0)
+    if (indiceEstado < 0 || indiceEstado >= 7 || texturasID[indiceEstado] == 0)
         return;
 
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glLoadIdentity();
-    gluOrtho2D(0, 1024, 0, 768); // Projeção ortogonal estável para o plano 2D
+    gluOrtho2D(0, 1024, 0, 768); 
 
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
@@ -25,9 +32,8 @@ void Renderer::RenderizarTelaEstado(int indiceEstado)
 
     glDisable(GL_LIGHTING);
     glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, texturasID[indiceEstado]); // Ativa a textura do estado [cite: 674, 690]
+    glBindTexture(GL_TEXTURE_2D, texturasID[indiceEstado]);
 
-    // Aplica a textura no objeto 2D conforme o modelo de aula [cite: 677, 679]
     glColor3f(1.0f, 1.0f, 1.0f);
     glBegin(GL_QUADS);
     glTexCoord2f(0.0f, 0.0f);

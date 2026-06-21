@@ -19,7 +19,6 @@ void SpatialHashGrid::LimparGrid()
 
 void SpatialHashGrid::InserirObjeto(ColisaoObjeto obj)
 {
-    // Insere o objeto com base no seu centro geométrico
     int chave = CalcularChaveHash(obj.corpoEsfera.x, obj.corpoEsfera.y);
     grid[chave].push_back(obj);
 }
@@ -32,16 +31,12 @@ std::vector<ColisaoObjeto> SpatialHashGrid::ObterVizinhosProximos(ColisaoObjeto 
 
     // Varre as 9 células adjacentes no espaço euclidiano do hash
     for (int dx = -1; dx <= 1; ++dx)
-    {
         for (int dy = -1; dy <= 1; ++dy)
         {
             int chave = CalcularChaveHash(x + dx * tamanhoCelula, y + dy * tamanhoCelula);
             if (grid.find(chave) != grid.end())
-            {
                 vizinhos.insert(vizinhos.end(), grid[chave].begin(), grid[chave].end());
-            }
         }
-    }
     return vizinhos;
 }
 
@@ -62,7 +57,6 @@ bool CollisionEngine::ChecarEsferaParaEsfera(SphereHitbox a, SphereHitbox b)
 
 bool CollisionEngine::ChecarMistas(SphereHitbox esfe, BoxHitbox caixa)
 {
-    // Encontra o ponto mais próximo dentro da AABB em relação ao centro da esfera
     float maisProximoX = std::max(caixa.minX, std::min(esfe.x, caixa.maxX));
     float maisProximoY = std::max(caixa.minY, std::min(esfe.y, caixa.maxY));
 

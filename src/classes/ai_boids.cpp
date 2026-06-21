@@ -2,8 +2,20 @@
 #include "../bibliotecas/ai_boids.h"
 #include <cmath>
 
+/** 
+ * @brief Construtor do Motor de Boids com parâmetros de configuração para velocidade e força
+ * @param maxVel Velocidade máxima dos boids
+ * @param maxFrc Força máxima de manobra
+ */
 BoidsEngine::BoidsEngine(float maxVel, float maxFrc) : maxVelocidade(maxVel), maxForca(maxFrc) {}
 
+/*** 
+ * @brief Aplica a força de procura aos boids para perseguir um alvo
+ * @param boid Referência ao boid ao qual aplicar a força
+ * @param tx Coordenada X do alvo
+ * @param ty Coordenada Y do alvo
+ * @param peso Peso da força
+ */
 void BoidsEngine::AplicarForcaProcura(Boid &boid, float tx, float ty, float peso)
 {
     float desejadoX = tx - boid.x;
@@ -31,6 +43,13 @@ void BoidsEngine::AplicarForcaProcura(Boid &boid, float tx, float ty, float peso
     }
 }
 
+/** 
+ * @brief Aplica a força de fuga aos boids (para fugir do SURGE)
+ * @param boid Referência ao boid ao qual aplicar a força
+ * @param tx Coordenada X do alvo
+ * @param ty Coordenada Y do alvo
+ * @param peso Peso da força
+ */
 void BoidsEngine::AplicarForcaFuga(Boid &boid, float tx, float ty, float peso)
 {
     // Comportamento inverso da procura: corre para a direção oposta ao perigo do SURGE
@@ -48,6 +67,13 @@ void BoidsEngine::AplicarForcaFuga(Boid &boid, float tx, float ty, float peso)
     }
 }
 
+/** 
+ * @brief Processa o enxame de boids com base na força de procura e fuga
+ * @param enxame Referência ao enxame de boids
+ * @param alvoX Coordenada X do alvo
+ * @param alvoY Coordenada Y do alvo
+ * @param jogadorEmSurge Se o jogador estiver em surge, os boids devem fugir; caso contrário, perseguir
+ */
 void BoidsEngine::ProcessarEnxame(std::vector<Boid> &enxame, float alvoX, float alvoY, bool jogadorEmSurge)
 {
     float raioVizinhanca = 2.5f;

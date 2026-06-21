@@ -2,7 +2,6 @@
 #define RENDERER_H
 
 #ifdef __APPLE__
-#define GL_SILENCE_DEPRECATION
 #include <GLUT/glut.h>
 #else
 #include <GL/freeglut.h>
@@ -16,26 +15,22 @@ struct Vector3
     Vector3(float _x, float _y, float _z) : x(_x), y(_y), z(_z) {}
 };
 
-enum Polaridade
-{
-    AZUL,
-    VERMELHA
-};
 
 class Renderer
 {
     private:
-        unsigned int texturasID[6]; 
+        unsigned int texturasID[7];
         float cameraX, cameraY, cameraZ;
         float targetX, targetY, targetZ;
 
     public:
+        unsigned int displayLists[5];
         Renderer();
         ~Renderer();
 
         void InicializarGL();
         void ConfigurarCamera(int width, int height);
-        void AtualizarIluminacaoDinamica(Polaridade polaridade, float playerX, float playerY);
+        void AtualizarIluminacaoDinamica(float playerX, float playerY);
         unsigned int CarregarTextura(const char *caminhoArquivo);
 
         void RenderizarTextoHUD(float x, float y, const char *texto, void *fonte);
@@ -43,6 +38,7 @@ class Renderer
         void InicializarTexturaEstado(int indiceEstado, const char *caminhoImagem);
 
         void RenderizarTelaEstado(int indiceEstado);
+        void CompilarModelos(); 
 
         void DesenharVirus1(float tamanho);
         void DesenharVirus2(float tamanho);
