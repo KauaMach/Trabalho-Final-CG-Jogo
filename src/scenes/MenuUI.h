@@ -12,7 +12,9 @@ enum GameState {
     STATE_SELECAO_FASE,
     STATE_RELATORIO, // Tela de relatorio
     STATE_PLAYING,
-    STATE_PAUSE
+    STATE_PAUSE,
+    STATE_VICTORY,
+    STATE_GAMEOVER
 };
 
 struct MenuButton {
@@ -31,6 +33,8 @@ private:
     GLuint cadeadoTexture;
     GLuint relatorioTexture;
     GLuint pauseTexture;
+    GLuint vitoriaTexture;
+    GLuint derrotaTexture;
     std::vector<MenuButton> buttons;
     
     struct Slider {

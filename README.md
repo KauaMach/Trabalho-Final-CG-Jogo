@@ -89,7 +89,7 @@ Substitui o conceito de "vidas" por um medidor coletivo de 0% a 100% que represe
 | Boss derrotado | +15% |
 | Inimigo passa da tela | -3% |
 | NANOCELL-1 recebe dano | -2% por hit |
-| HSP atingir 80% | Boss da fase é invocado imediatamente |
+| HSP atingir 90% | Boss da fase é invocado imediatamente |
 | HSP atingir 0% | Game Over — reinicia a fase atual |
 
 ### 3.4 Dash de Evasão e Barrel Roll
@@ -106,6 +106,10 @@ Para manter o foco tático na mecânica de polaridade e evitar poluição visual
   2. Recupera uma fração da **Vida** do NANOCELL-1.
 * **Taxas Variáveis:** A quantidade de vida recuperada depende do tipo de ataque absorvido (lasers pesados ou inimigos maiores curam uma taxa maior).
 * **Risco vs Recompensa:** O **dano** sofrido ao colidir com a cor oposta é **sempre rigorosamente superior** à quantidade de vida ganha ao absorver a cor correta. Isso garante que o jogador não abuse da mecânica de cura e seja forçado a pilotar e alternar as cores com precisão cirúrgica.
+
+### 3.6 Screen Wrapping (Efeito Pac-Man / Asteroids)
+
+Para manter a dinâmica ágil e compensar a câmera fixa no eixo X, o jogo utiliza uma mecânica de teletransporte nas bordas laterais (*Screen Wrapping*). Se o NANOCELL-1 ultrapassar o limite máximo de visão da câmera pela direita, ele reaparecerá imediatamente na borda esquerda, e vice-versa. Isso cria novas estratégias evasivas e garante que a nave nunca "suma" do campo de visão.
 
 ---
 
@@ -135,9 +139,9 @@ Para manter o foco tático na mecânica de polaridade e evitar poluição visual
 | **Objetivo** | Introduzir o sistema de polaridade e controles básicos |
 | **Ambiente** | Scroll vertical lento. Hemácias 3D passam como obstáculos decorativos. Plasma simulado via blending OpenGL com objetos semi-transparentes. |
 | **Inimigos** | Vírus Alfa (enxame Boids azul) e Bactéria Coco (tanque vermelho lento) |
-| **Mecânica especial** | Correntes de plasma criam zonas de aceleração ao serem atravessadas |
+| **Mecânica especial** |  |
 | **Boss — Leukocyte Corrupto** | 3 estados: patrulha senoidal → ataque em espiral → fúria com projéteis densos em todas as direções |
-| **Gatilho do Boss** | HSP atinge 100% ou 90 segundos de fase decorridos |
+| **Gatilho do Boss** | HSP atinge 90% ou 120 segundos de fase decorridos |
 
 
 ### 5.2 Fase 2 — Pulmões
@@ -146,10 +150,10 @@ Para manter o foco tático na mecânica de polaridade e evitar poluição visual
 |---|---|
 | **Objetivo** | Apresentar mecânica de timing e abertura de janelas |
 | **Ambiente** | Alvéolos 3D expandem e contraem em ciclo sinusoidal de 4 segundos, simulando a respiração. Passagens abrem e fecham. |
-| **Inimigos** | Vírus Beta (sincronizado com ciclo respiratório) e Esporo Fúngico (kamikaze azul de alta velocidade) |
+| **Inimigos** | Vírus Gama (Alterna entre Azul e Vermelho a cada 3s) e Esporo Fúngico (kamikaze azul de alta velocidade) |
 | **Mecânica especial** | Alvéolo aberto = janela de vulnerabilidade do boss. Fechado = escudo natural. |
 | **Boss — Pneumococo Gigante** | Ataca apenas na inspiração. Na expiração recua — janela de ataque seguro para o jogador. |
-| **Gatilho do Boss** | HSP atinge 100% ou 120 segundos de fase |
+| **Gatilho do Boss** | HSP atinge 90% ou 120 segundos de fase |
 
 ### 5.3 Fase 3 — Sistema Nervoso Central
 
@@ -160,7 +164,7 @@ Para manter o foco tático na mecânica de polaridade e evitar poluição visual
 | **Inimigos** | Príon Mimético (copia posição do jogador com 1,5 s de delay) e Vírus Delta (espelha e atira simultaneamente) |
 | **Mecânica especial** | Pulso sináptico a cada 20 s: inverte eixos de movimento por 3 segundos |
 | **Boss — Nexus Omega** | 3 formas: escudo dual → convoca enxame → núcleo exposto com bullet-hell final |
-| **Gatilho do Boss** | HSP atinge 100% ou 150 segundos de fase |
+| **Gatilho do Boss** | HSP atinge 90% ou 120 segundos de fase |
 
 ### 5.4 Fluxo de Progressão Geral
 
@@ -194,6 +198,44 @@ Ao final de cada fase é atribuído um ranking de **S** a **D** baseado em:
 | **Príon Mimético** | Oposta — Espelho | Buffer circular de posições do jogador reproduzido com delay de 1,5 s. |
 | **Vírus Delta** |Vermelho/azul 🔴 🔵 - Hacker | Copia movimento e dispara projéteis da cor oposta. Delay reduz com o tempo. |
 | **Microplaqueta Hive** | Dual — Elite | Metade azul, metade vermelha. Exige troca de polaridade durante o combate. |
+
+### 6.1 Tabela de Balanceamento de HP e Resistência
+
+| Inimigo (Fase)          | Tipo / Comportamento    | HP (Vida)  | Tiros Certos p/ Matar | Tiros Errados p/ Matar |
+|-------------------------|-------------------------|:----------:|:---------------------:|:----------------------:|
+| **Vírus Alfa** (1) | Enxame fraco (Azul)     |    15.0    |      1 a 2 tiros      |        15 tiros        |
+| **Bactéria Coco** (F1)  | Tanque Lento (Vermelho) |    40.0    |        4 tiros        |        40 tiros        |
+| **Leukocyte Corrupto** (F1)  | BOSS (Fase 1)           |   400.0    |       40 tiros        |       400 tiros        |
+| **Esporo Fúngico** (F2) | Kamikaze muito rápido   |    10.0    |   1 tiro (One-hit)    |        10 tiros        |
+| **Vírus Gama** (F2) | Troca de cor a cada 3s  |    20.0    |        2 tiros        |        20 tiros        |
+| **Pneumococo Gigante**  | BOSS (Fase 2)           |   600.0    |       60 tiros        |       600 tiros        |
+| **Príon Mimético** (F3) | Copia sua posição       |    30.0    |        3 tiros        |        30 tiros        |
+| **Vírus Delta** (3)| Atira e reflete danos   |    45.0    |      4 a 5 tiros      |        45 tiros        |
+| **Microplaqueta Hive**  | Elite (Fase 2 e 3)      |    80.0    |        8 tiros        |        80 tiros        |
+| **Nexus Omega** (F3)   | BOSS FINAL (Fase 3)     |   1200.0   | 120 tiros (Use SURGE!)| Impossível sem a cor certa |
+
+**Análise do Design:**
+- Note que o **Esporo Fúngico** tem vida quase nula (10 de HP), pois como ele é um "Kamikaze" que se joga contra você muito rápido, o jogador precisa conseguir matá-lo em um milissegundo de reação.
+- A **Bactéria Coco** tem 40 de HP justamente porque o README a define como um "Tanque" de resistência, obrigando o jogador a ficar atirando nela por alguns segundos.
+- O **Nexus Omega (Final Boss)** tem tanta vida que obrigará o jogador a usar o medidor de **SURGE (Especial)** várias vezes durante a luta para conseguir vencer.
+
+### 6.2 Tabela de Danos (Nanocell e Paciente)
+
+| Inimigo / Entidade | Tipo de Ataque | Dano na Nanocell (Vida 100%) | Impacto no Paciente (HSP 100%) |
+|:---|:---|:---:|:---:|
+| **Qualquer Inimigo** | **Fuga** (Passar direto pelo jogador) | `0%` | `-3.0%` (Punição de Fuga) |
+| **Vírus Alfa** (F1) | **Colisão Física** (Kamikaze/Mergulho) | `-10.0%` | `0%` |
+| **Bactéria Coco** (F1) | **Colisão Física** (Trombar no Tanque) | `-10.0%` | `0%` |
+| **Bactéria Coco** (F1) | **Projétil** (Tiro Duplo Inimigo) | `-5.0%` por acerto | `0%` |
+| **Esporo Fúngico** (F2) | **Colisão Explosiva** (Área) | `-20.0%` | `-5.0%` (Infecção grave) |
+| **Vírus Gama** (F2) | **Colisão Física** | `-10.0%` | `0%` |
+| **Microplaqueta Hive** (F2) | **Colisão Física** | `-15.0%` | `0%` |
+| **Príon Mimético** (F3) | **Colisão Física / Confusão** | `-15.0%` | `0%` |
+| **Vírus Delta** (F3) | **Projétil Refletido** | `-8.0%` por acerto | `0%` |
+| **Bosses (Qualquer Fase)** | **Colisão Física Direta** | `-30.0%` (Esmagamento) | `-10.0%` |
+| **Bosses (Qualquer Fase)** | **Projéteis / Habilidades Especiais**| `-10.0%` a `-20.0%` | `0%` |
+
+*(Nota: Destruir qualquer inimigo sempre curará o paciente em `+2.0%` de HSP como recompensa).*
 
 ---
 
@@ -276,12 +318,12 @@ O HUD é desenhado via `glOrtho` em coordenadas de tela (overlay 2D sobre a cena
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│  NANOCELL-1                 FASE 3 — NÓDULO LINFÁTICO   │
+│  NANOCELL-1                 FASE 1 — Corrente Sanguínea │
 │  VIDA   ███████░░  78%      HSP   ██████░░░  62%        │
 │                                                         │
-│  ● POLARIDADE: AZUL         SURGE ████░░░░  47%         │
+│  ● POLARIDADE: AZUL🔵        SURGE ████░░░░  47%        │
 │                                                         │
-│  SCORE: 48.200   COMBO: x3   DNA: ◈ 120                │
+│  SCORE: 48.200   COMBO: x3                              │
 └─────────────────────────────────────────────────────────┘
 ```
 

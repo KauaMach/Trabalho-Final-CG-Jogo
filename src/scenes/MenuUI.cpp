@@ -5,7 +5,10 @@
 
 extern GameState currentState;    // Definido na main.cpp
 extern AudioManager audioManager; // Definido na main.cpp
-extern Player player;    // Definido na main.cpp
+extern Player player;             // Definido na main.cpp
+extern float gameTimer;           // Definido na main.cpp
+extern int enemiesKilled;         // Definido na main.cpp
+extern void ResetGame();          // Definido na main.cpp
 
 void MenuUI::Init()
 {
@@ -17,6 +20,8 @@ void MenuUI::Init()
     cadeadoTexture = Renderer::LoadTexture("assets/textures/bg-cadeado-fase.png");
     relatorioTexture = Renderer::LoadTexture("assets/textures/bg-relatorio.png");
     pauseTexture = Renderer::LoadTexture("assets/textures/bg-pause.png");
+    vitoriaTexture = Renderer::LoadTexture("assets/textures/bg-vitoria.png");
+    derrotaTexture = Renderer::LoadTexture("assets/textures/bg-derrota.png");
 
     // Coordenadas estimadas para sliders de audio
     musicSlider = {85.0f, 770.0f, 305.0f, 333.0f, 1.0f}; // Default 100%
@@ -139,28 +144,32 @@ void MenuUI::HandleClick(int mouseX, int realMouseY, GameState &state)
             return;
         }
         // Botao Voltar
-        if (mouseX >= 30.0f && mouseX <= 200.0f && realMouseY >= 30.0f && realMouseY <= 100.0f) {
+        if (mouseX >= 30.0f && mouseX <= 200.0f && realMouseY >= 30.0f && realMouseY <= 100.0f)
+        {
             audioManager.PlayClickSound();
             state = STATE_MENU;
         }
     }
     else if (state == STATE_PAUSE)
     {
-        // Continuar Jogo (Botoes em 3 andares - estimativa no centro da lousa)
-        if (mouseX >= 380.0f && mouseX <= 644.0f && realMouseY >= 460.0f && realMouseY <= 530.0f) {
+        // Continuar Jogo (Top - Y entre 450 e 510)
+        if (mouseX >= 415.0f && mouseX <= 590.0f && realMouseY >= 360.0f && realMouseY <= 390.0f)
+        {
             audioManager.PlayClickSound();
             state = STATE_PLAYING;
             return;
         }
         // Reiniciar Jogo (Meio)
-        if (mouseX >= 380.0f && mouseX <= 644.0f && realMouseY >= 360.0f && realMouseY <= 430.0f) {
+        if (mouseX >= 415.0f && mouseX <= 590.0f && realMouseY >= 320.0f && realMouseY <= 350.0f)
+        {
             audioManager.PlayClickSound();
-            player.Init(); // Reposiciona a nave, zera a vida e o surge!
+            player.Reset(); // Reposiciona a nave, zera a vida e o surge, e apaga lasers!
             state = STATE_PLAYING;
             return;
         }
-        // Desistir / Voltar as Fases (Inferior)
-        if (mouseX >= 380.0f && mouseX <= 644.0f && realMouseY >= 260.0f && realMouseY <= 330.0f) {
+        // Desistir / Voltar as Fases (Inferior - Y entre 250 e 310)
+        if (mouseX >= 415.0f && mouseX <= 590.0f && realMouseY >= 270.0f && realMouseY <= 310.0f)
+        {
             audioManager.PlayClickSound();
             state = STATE_SELECAO_FASE;
             return;
@@ -171,6 +180,45 @@ void MenuUI::HandleClick(int mouseX, int realMouseY, GameState &state)
         // Clique em qualquer lugar volta para a selecao de fase
         audioManager.PlayClickSound();
         state = STATE_SELECAO_FASE;
+    }
+    else if (state == STATE_VICTORY)
+    {
+        // Hitbox Prox Fase (BOTAO SUPERIOR)
+        if (mouseX >= 277.0f && mouseX <= 657.0f && realMouseY >= 162.0f && realMouseY <= 210.0f)
+        {
+            audioManager.PlayClickSound();
+            std::cout << "PROXIMA FASE NAO IMPLEMENTADA, INDO PARA SELECAO" << std::endl;
+            state = STATE_SELECAO_FASE;
+        }
+        // Hitbox Tentar Novamente (BOTAO DO MEIO)
+        else if (mouseX >= 277.0f && mouseX <= 657.0f && realMouseY >= 100.0f && realMouseY <= 147.0f)
+        {
+            audioManager.PlayClickSound();
+            ResetGame();
+            state = STATE_PLAYING;
+        }
+        // Hitbox Menu Principal (BOTAO INFERIOR)
+        else if (mouseX >= 277.0f && mouseX <= 657.0f && realMouseY >= 43.0f && realMouseY <= 90.0f)
+        {
+            audioManager.PlayClickSound();
+            state = STATE_MENU;
+        }
+    }
+    else if (state == STATE_GAMEOVER)
+    {
+        // Hitbox Tentar Novamente (BOTAO DO MEIO - Mesmas Coordenadas)
+        if (mouseX >= 277.0f && mouseX <= 657.0f && realMouseY >= 100.0f && realMouseY <= 147.0f)
+        {
+            audioManager.PlayClickSound();
+            ResetGame();
+            state = STATE_PLAYING;
+        }
+        // Hitbox Menu Principal (BOTAO INFERIOR - Mesmas Coordenadas)
+        else if (mouseX >= 277.0f && mouseX <= 657.0f && realMouseY >= 43.0f && realMouseY <= 90.0f)
+        {
+            audioManager.PlayClickSound();
+            state = STATE_MENU;
+        }
     }
 }
 
@@ -267,22 +315,23 @@ void MenuUI::Render(GameState state)
     else if (state == STATE_RELATORIO)
     {
         Renderer::DrawTexture(relatorioTexture, 0, 0, 1024, 768);
-        
+
         // --- TEXTOS FALSOS PARA ESTATISTICAS (Temporario) ---
         Renderer::DrawText("ESTATISTICAS DO JOGADOR", 180, 560, 0.0f, 1.0f, 0.3f);
         Renderer::DrawText("STATUS DAS FASES", 550, 560, 0.0f, 1.0f, 0.3f);
-        
+
         Renderer::DrawText("Pontos Acumulados: 12.500", 180, 480, 1.0f, 1.0f, 1.0f);
         Renderer::DrawText("Inimigos Destruidos: 342", 180, 430, 1.0f, 1.0f, 1.0f);
         Renderer::DrawText("Precisao de Tiros: 87%", 180, 380, 1.0f, 1.0f, 1.0f);
         Renderer::DrawText("Mortes: 3", 180, 330, 1.0f, 1.0f, 1.0f);
-        
+
         Renderer::DrawText("Corrente Sanguinea: RANK S (Concluido)", 550, 480, 1.0f, 1.0f, 1.0f);
         Renderer::DrawText("Pulmoes: BLOQUEADO", 550, 430, 0.5f, 0.5f, 0.5f);
         Renderer::DrawText("Sistema Nervoso: BLOQUEADO", 550, 380, 0.5f, 0.5f, 0.5f);
-        
+
         // Botao voltar
-        if (hoverX >= 30.0f && hoverX <= 200.0f && hoverY >= 30.0f && hoverY <= 100.0f) {
+        if (hoverX >= 30.0f && hoverX <= 200.0f && hoverY >= 30.0f && hoverY <= 100.0f)
+        {
             Renderer::DrawSemiTransparentRect(30, 200, 30, 100, 0.0f, 1.0f, 0.3f, 0.15f);
         }
     }
@@ -290,26 +339,87 @@ void MenuUI::Render(GameState state)
     {
         // 1. Escurece o jogo congelado no fundo (Overlay transparente preto mais claro)
         Renderer::DrawSemiTransparentRect(0, 1024, 0, 768, 0.0f, 0.0f, 0.0f, 0.35f);
-        
-        // 2. Desenha a textura do Pause de volta no tamanho cheio 1024x768 (O centro e transparente)
-        Renderer::DrawTexture(pauseTexture, 0, 0, 1024, 768);
-        
+
+        // 2. Desenha a textura do Pause menor e condensada no centro da tela (Largura 400, Altura 450)
+        Renderer::DrawTexture(pauseTexture, 312, 159, 400, 450);
+
         // Efeito Hover Continuar
-        if (hoverX >= 380.0f && hoverX <= 644.0f && hoverY >= 460.0f && hoverY <= 530.0f) {
-            Renderer::DrawSemiTransparentRect(380, 644, 460, 530, 0.0f, 1.0f, 0.3f, 0.15f);
+        if (hoverX >= 415.0f && hoverX <= 590.0f && hoverY >= 360.0f && hoverY <= 390.0f)
+        {
+            Renderer::DrawSemiTransparentRect(415, 590, 360, 390, 0.0f, 1.0f, 0.3f, 0.15f);
         }
         // Efeito Hover Reiniciar
-        if (hoverX >= 380.0f && hoverX <= 644.0f && hoverY >= 360.0f && hoverY <= 430.0f) {
-            Renderer::DrawSemiTransparentRect(380, 644, 360, 430, 0.0f, 1.0f, 1.0f, 0.15f); // Ciano para diferir
+        if (hoverX >= 415.0f && hoverX <= 590.0f && hoverY >= 320.0f && hoverY <= 350.0f)
+        {
+            Renderer::DrawSemiTransparentRect(415, 590, 320, 350, 0.0f, 1.0f, 1.0f, 0.15f); // Ciano para diferir
         }
         // Efeito Hover Desistir
-        if (hoverX >= 380.0f && hoverX <= 644.0f && hoverY >= 260.0f && hoverY <= 330.0f) {
-            Renderer::DrawSemiTransparentRect(380, 644, 260, 330, 1.0f, 0.0f, 0.0f, 0.15f);
+        if (hoverX >= 415.0f && hoverX <= 590.0f && hoverY >= 270.0f && hoverY <= 310.0f)
+        {
+            Renderer::DrawSemiTransparentRect(415, 590, 270, 310, 1.0f, 0.0f, 0.0f, 0.15f);
         }
     }
     else if (state == STATE_PLAYING)
     {
         // Placeholder render para tela de jogo
         Renderer::DrawSemiTransparentRect(0, 1024, 0, 768, 0.1f, 0.1f, 0.1f, 1.0f);
+    }
+    else if (state == STATE_VICTORY)
+    {
+        Renderer::DrawTexture(vitoriaTexture, 0, 0, 1024, 768);
+
+        // Formatar tempo
+        int m = (int)gameTimer / 60;
+        int s = (int)gameTimer % 60;
+        char timeText[64];
+        sprintf(timeText, "%02d:%02d", m, s);
+
+        // A imagem já possui os textos, imprimimos apenas os valores.
+        // O valor do X=600 é uma estimativa, o usuário pode ajustar no código!
+        float valX = 600.0f;
+        Renderer::DrawText(timeText, valX, 450, 1.0f, 1.0f, 1.0f);                                             // Tempo da Missao
+        Renderer::DrawText(std::to_string(enemiesKilled), valX, 385, 1.0f, 1.0f, 1.0f);                        // Inimigos Exterminados
+        Renderer::DrawText(std::to_string((int)player.GetPatientHealth()) + "%", valX, 325, 1.0f, 1.0f, 1.0f); // Integridade do Paciente
+        Renderer::DrawText(std::to_string((int)player.GetCurrentHealth()) + "%", valX, 260, 1.0f, 1.0f, 1.0f); // Integridade da Nanocell
+
+        // Efeito Hover dos Botoes
+        if (hoverX >= 277.0f && hoverX <= 657.0f && hoverY >= 162.0f && hoverY <= 210.0f)
+        {
+            Renderer::DrawSemiTransparentRect(277, 657, 164, 210, 0.0f, 1.0f, 0.3f, 0.15f);
+        }
+        if (hoverX >= 277.0f && hoverX <= 657.0f && hoverY >= 100.0f && hoverY <= 147.0f)
+        {
+            Renderer::DrawSemiTransparentRect(277, 657, 100, 147, 0.0f, 1.0f, 0.3f, 0.15f);
+        }
+        if (hoverX >= 277.0f && hoverX <= 657.0f && hoverY >= 43.0f && hoverY <= 90.0f)
+        {
+            Renderer::DrawSemiTransparentRect(277, 657, 43, 90, 0.0f, 1.0f, 0.3f, 0.15f);
+        }
+    }
+    else if (state == STATE_GAMEOVER)
+    {
+        Renderer::DrawTexture(derrotaTexture, 0, 0, 1024, 768);
+
+        // Formatar tempo
+        int m = (int)gameTimer / 60;
+        int s = (int)gameTimer % 60;
+        char timeText[64];
+        sprintf(timeText, "%02d:%02d", m, s);
+
+        float valX = 600.0f; // Mesma posição da vitória
+        Renderer::DrawText(timeText, valX, 450, 1.0f, 1.0f, 1.0f);
+        Renderer::DrawText(std::to_string(enemiesKilled), valX, 385, 1.0f, 1.0f, 1.0f);
+        Renderer::DrawText(std::to_string((int)player.GetPatientHealth()) + "%", valX, 325, 1.0f, 1.0f, 1.0f);
+        Renderer::DrawText(std::to_string((int)player.GetCurrentHealth()) + "%", valX, 260, 1.0f, 1.0f, 1.0f);
+
+        // Efeito Hover dos Botoes (Somente Tentar Novamente e Menu)
+        if (hoverX >= 277.0f && hoverX <= 657.0f && hoverY >= 100.0f && hoverY <= 147.0f)
+        {
+            Renderer::DrawSemiTransparentRect(277, 657, 100, 147, 0.0f, 1.0f, 0.3f, 0.15f);
+        }
+        if (hoverX >= 277.0f && hoverX <= 657.0f && hoverY >= 43.0f && hoverY <= 90.0f)
+        {
+            Renderer::DrawSemiTransparentRect(277, 657, 43, 90, 0.0f, 1.0f, 0.3f, 0.15f);
+        }
     }
 }

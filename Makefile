@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -std=c++17 -Wall -Iinclude -Isrc
+CXXFLAGS = -std=c++17 -Wall -O3 -Iinclude -Isrc
 
 # Configurações de Linker (Multiplataforma)
 LIBS_LINUX = -lGL -lGLU -lglut -lGLEW -lSDL2 -lSDL2_mixer
