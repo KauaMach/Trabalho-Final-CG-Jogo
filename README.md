@@ -123,7 +123,7 @@ Para manter a dinâmica ágil e compensar a câmera fixa no eixo X, o jogo utili
 | `Q` | Ativar SURGE (apenas quando barra estiver cheia) |
 | `E` | Back-Dash evasivo com Barrel Roll (cooldown 2 s) |
 | `R` | Fazer um Barrel Roll sem recuo no ar (Manobra Estilosa) |
-| `1` a `4` | Alternar modos de Câmera (2.5D Dir, 2.5D Esq, Top-Down, 1ª Pessoa) |
+| `1` a `4` | Alternar modos de Câmera (1 e 2: Ação 3D Dinâmica, 3: Modo Ikaruga Arcade 2D, 4: Livre) |
 | `ESC` | Pausar jogo / Abrir menu de pausa |
 | `F` | Alternar fullscreen / janela |
 | `ENTER` | Confirmar seleção nos menus |
@@ -149,10 +149,10 @@ Para manter a dinâmica ágil e compensar a câmera fixa no eixo X, o jogo utili
 | Campo | Detalhe |
 |---|---|
 | **Objetivo** | Apresentar mecânica de timing e abertura de janelas |
-| **Ambiente** | Alvéolos 3D expandem e contraem em ciclo sinusoidal de 4 segundos, simulando a respiração. Passagens abrem e fecham. |
-| **Inimigos** | Vírus Gama (Alterna entre Azul e Vermelho a cada 3s) e Esporo Fúngico (kamikaze azul de alta velocidade) |
-| **Mecânica especial** | Alvéolo aberto = janela de vulnerabilidade do boss. Fechado = escudo natural. |
-| **Boss — Pneumococo Gigante** | Ataca apenas na inspiração. Na expiração recua — janela de ataque seguro para o jogador. |
+| **Ambiente** | Alvéolos 3D expandem e contraem em ciclo sinusoidal |
+| **Inimigos** | Vírus Gama (Atirador bipolar) e Esporo Fúngico (horda kamikaze ultra rápida) |
+| **Mecânica especial** | O fundo pulmonar recebe Overlay sombrio de 70%, destacando intensamente os lasers neon. |
+| **Boss — Pneumococo Gigante** | Escudo impenetrável na inspiração. Na expiração, a defesa cai. Luta progride num denso Bullet-Hell de 3 fases. |
 | **Gatilho do Boss** | HSP atinge 90% ou 120 segundos de fase |
 
 ### 5.3 Fase 3 — Sistema Nervoso Central
@@ -193,47 +193,45 @@ Ao final de cada fase é atribuído um ranking de **S** a **D** baseado em:
 |---|---|---|
 | **Vírus Alfa** | 🔵 Azul — Enxame | Ataca em grupo via Boids. Mergulha em formação V ao se aproximar do jogador. |
 | **Bactéria Coco** | 🔴 Vermelho — Tanque | Alta vida, movimento linear, tiro duplo. Serve como obstáculo de absorção. |
-| **Vírus Gama** | Vermelho/azul 🔴 🔵 - Camuflagem   | Alterna entre Azul e Vermelho a cada 3 segundos, forçando o jogador a adaptar sua polaridade. |
-| **Esporo Fúngico** | 🔵 Azul — Kamikaze | Detecta posição do jogador e mergulha em linha reta. Explode em área ao contato. |
+| **Vírus Gama** | Vermelho/azul 🔴 🔵 - Atirador | Atira projéteis teleguiados, mantendo a mecânica de troca de cor a cada 3s (o tiro herda a cor atual do vírus). |
+| **Esporo Fúngico** | 🔵 Azul — Kamikaze em Horda | Detecta a posição do jogador e mergulha em bandos triplos (x3) em altíssima velocidade. Explode em área ao contato. |
 | **Príon Mimético** | Oposta — Espelho | Buffer circular de posições do jogador reproduzido com delay de 1,5 s. |
 | **Vírus Delta** |Vermelho/azul 🔴 🔵 - Hacker | Copia movimento e dispara projéteis da cor oposta. Delay reduz com o tempo. |
-| **Microplaqueta Hive** | Dual — Elite | Metade azul, metade vermelha. Exige troca de polaridade durante o combate. |
 
 ### 6.1 Tabela de Balanceamento de HP e Resistência
 
 | Inimigo (Fase)          | Tipo / Comportamento    | HP (Vida)  | Tiros Certos p/ Matar | Tiros Errados p/ Matar |
 |-------------------------|-------------------------|:----------:|:---------------------:|:----------------------:|
-| **Vírus Alfa** (1) | Enxame fraco (Azul)     |    15.0    |      1 a 2 tiros      |        15 tiros        |
+| **Vírus Alfa** (F1) | Enxame fraco (Azul)     |    15.0    |      1 a 2 tiros      |        15 tiros        |
 | **Bactéria Coco** (F1)  | Tanque Lento (Vermelho) |    40.0    |        4 tiros        |        40 tiros        |
 | **Leukocyte Corrupto** (F1)  | BOSS (Fase 1)           |   400.0    |       40 tiros        |       400 tiros        |
-| **Esporo Fúngico** (F2) | Kamikaze muito rápido   |    10.0    |   1 tiro (One-hit)    |        10 tiros        |
-| **Vírus Gama** (F2) | Troca de cor a cada 3s  |    20.0    |        2 tiros        |        20 tiros        |
-| **Pneumococo Gigante**  | BOSS (Fase 2)           |   600.0    |       60 tiros        |       600 tiros        |
+| **Esporo Fúngico** (F2) | Kamikaze (Horda Rápida)|    10.0    |   1 tiro (One-hit)    |        10 tiros        |
+| **Vírus Gama** (F2) | Atirador Bipolar (3s) |    20.0    |        2 tiros        |        20 tiros        |
+| **Pneumococo Gigante**  | BOSS F2 (3 Fases Bullet-Hell)|   600.0    |       60 tiros        |       600 tiros        |
 | **Príon Mimético** (F3) | Copia sua posição       |    30.0    |        3 tiros        |        30 tiros        |
 | **Vírus Delta** (3)| Atira e reflete danos   |    45.0    |      4 a 5 tiros      |        45 tiros        |
-| **Microplaqueta Hive**  | Elite (Fase 2 e 3)      |    80.0    |        8 tiros        |        80 tiros        |
 | **Nexus Omega** (F3)   | BOSS FINAL (Fase 3)     |   1200.0   | 120 tiros (Use SURGE!)| Impossível sem a cor certa |
 
 **Análise do Design:**
-- Note que o **Esporo Fúngico** tem vida quase nula (10 de HP), pois como ele é um "Kamikaze" que se joga contra você muito rápido, o jogador precisa conseguir matá-lo em um milissegundo de reação.
-- A **Bactéria Coco** tem 40 de HP justamente porque o README a define como um "Tanque" de resistência, obrigando o jogador a ficar atirando nela por alguns segundos.
+- A **Bactéria Coco** tem 40 de HP justamente porque e um "Tanque" de resistência, obrigando o jogador a ficar atirando nela por alguns segundos.
+- O **Esporo Fúngico** tem vida quase nula (10 de HP), pois como ele é um "Kamikaze" que se joga contra você muito rápido, o jogador precisa conseguir matá-lo em um milissegundo de reação.
 - O **Nexus Omega (Final Boss)** tem tanta vida que obrigará o jogador a usar o medidor de **SURGE (Especial)** várias vezes durante a luta para conseguir vencer.
 
 ### 6.2 Tabela de Danos (Nanocell e Paciente)
 
-| Inimigo / Entidade | Tipo de Ataque | Dano na Nanocell (Vida 100%) | Impacto no Paciente (HSP 100%) |
+| Inimigo / Entidade | Tipo de Ataque | Dano na Nanocell | Impacto no Paciente (HSP) |
 |:---|:---|:---:|:---:|
-| **Qualquer Inimigo** | **Fuga** (Passar direto pelo jogador) | `0%` | `-3.0%` (Punição de Fuga) |
-| **Vírus Alfa** (F1) | **Colisão Física** (Kamikaze/Mergulho) | `-10.0%` | `0%` |
-| **Bactéria Coco** (F1) | **Colisão Física** (Trombar no Tanque) | `-10.0%` | `0%` |
-| **Bactéria Coco** (F1) | **Projétil** (Tiro Duplo Inimigo) | `-5.0%` por acerto | `0%` |
+| **Qualquer Inimigo** | **Fuga** (Passar direto pela tela) | `0%` | `-3.0%` (Punição) |
+| **Vírus Alfa** (F1) | **Colisão Física** (Mergulho) | `-10.0%` | `0%` |
+| **Bactéria Coco** (F1) | **Colisão Física** (Trombar) | `-10.0%` | `0%` |
+| **Bactéria Coco** (F1) | **Projétil** (Tiro Duplo) | `-5.0%` (por tiro) | `0%` |
 | **Esporo Fúngico** (F2) | **Colisão Explosiva** (Área) | `-20.0%` | `-5.0%` (Infecção grave) |
 | **Vírus Gama** (F2) | **Colisão Física** | `-10.0%` | `0%` |
-| **Microplaqueta Hive** (F2) | **Colisão Física** | `-15.0%` | `0%` |
-| **Príon Mimético** (F3) | **Colisão Física / Confusão** | `-15.0%` | `0%` |
-| **Vírus Delta** (F3) | **Projétil Refletido** | `-8.0%` por acerto | `0%` |
+| **Vírus Gama** (F2) | **Projétil** (Laser Teleguiado) | `-15.0%` | `0%` |
+| **Príon Mimético** (F3) | **Colisão Física** | `-15.0%` | `0%` |
+| **Vírus Delta** (F3) | **Projétil Refletido** | `-8.0%` (por acerto) | `0%` |
 | **Bosses (Qualquer Fase)** | **Colisão Física Direta** | `-30.0%` (Esmagamento) | `-10.0%` |
-| **Bosses (Qualquer Fase)** | **Projéteis / Habilidades Especiais**| `-10.0%` a `-20.0%` | `0%` |
+| **Bosses (Qualquer Fase)** | **Habilidades Especiais**| `-10.0%` a `-20.0%` | `0%` |
 
 *(Nota: Destruir qualquer inimigo sempre curará o paciente em `+2.0%` de HSP como recompensa).*
 
@@ -376,9 +374,7 @@ NTF-CG-Jogo/
 ├── src/
 │   ├── core/         # Motores base: Renderer (abstração OpenGL), Sistema de Janela, Input, Física
 │   ├── entities/     # Lógica das entidades: Player (NANOCELL-1), Inimigos, Bosses, Projéteis
-│   ├── scenes/       # Gerenciamento de Estados/Cenas: Menu, Fases (Corrente Sanguínea, etc)
-│   ├── math/         # Abstrações matemáticas p/ transformações 2D/3D (Translação, Rotação, Escala)
-│   └── ai/           # Lógica de Inteligência Artificial: Algoritmo de Boids e FSM dos Bosses
+│   └── scenes/       # Gerenciamento de Estados/Cenas: Menu, Fases (Corrente Sanguínea, etc)
 ├── assets/
 │   ├── textures/     # PNG: sprites, texturas orgânicas e elementos de HUD
 │   ├── audio/        # OGG: trilhas sonoras · WAV: efeitos especiais (SFX)
@@ -441,30 +437,29 @@ projetil.cor != jogador.polaridade  →  dano normal + feedback visual
 | **SDL2** | Inicialização de áudio cross-platform |
 | **SDL2_mixer** | Reprodução de OGG (música) e WAV (SFX) |
 | **stb_image.h** | Carga de PNG/JPG para texturas (header-only) |
-| **GLM** | Vetores e matrizes para Boids e transformações |
 
 ### 12.2 Instalação das Dependências
 
 **Fedora / RHEL:**
 ```bash
-sudo dnf install freeglut-devel SDL2-devel SDL2_mixer-devel glm-devel glew-devel
+sudo dnf install freeglut-devel SDL2-devel SDL2_mixer-devel glew-devel
 ```
 
 **Ubuntu / Debian:**
 ```bash
-sudo apt install freeglut3-dev libsdl2-dev libsdl2-mixer-dev libglm-dev libglew-dev
+sudo apt install freeglut3-dev libsdl2-dev libsdl2-mixer-dev libglew-dev
 ```
 
 **macOS (Homebrew):**
 ```bash
-brew install freeglut sdl2 sdl2_mixer glm glew
+brew install freeglut sdl2 sdl2_mixer glew
 ```
 
 ### 12.3 Compilação
 
 ```bash
-# Linux / macOS
-make
+# Linux / macOS (Use -j4 para utilizar múltiplos núcleos e compilar mais rápido)
+make -j4
 
 # Cross-compile para Windows (MinGW)
 make win
@@ -516,7 +511,6 @@ TARGET   = imunidade
 
 - [freeGLUT](http://freeglut.sourceforge.net/) — Implementação livre do GLUT
 - [GLEW](http://glew.sourceforge.net/) — OpenGL Extension Wrangler
-- [GLM](https://glm.g-truc.net/) — OpenGL Mathematics
 - [SDL2_mixer](https://www.libsdl.org/projects/SDL_mixer/) — Áudio multiplataforma
 - [stb_image](https://github.com/nothings/stb) — Carregamento de imagens (header-only)
 - [tinyobjloader](https://github.com/tinyobjloader/tinyobjloader) — Parser de arquivos OBJ

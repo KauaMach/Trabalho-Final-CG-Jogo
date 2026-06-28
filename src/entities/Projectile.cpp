@@ -89,25 +89,30 @@ void EnemyProjectile::Draw() {
     
     glPushMatrix();
     glTranslatef(x, y, z);
-    glScalef(1.5f, 1.5f, 1.5f); // Tiro redondo ou esférico
+    
+    // Calcula angulo para apontar na direção da velocidade
+    float angleY = std::atan2(speedX, speedZ) * 180.0f / 3.14159f;
+    glRotatef(angleY, 0.0f, 1.0f, 0.0f);
+    
+    // Forma esticada de Laser
+    glScalef(0.5f, 0.5f, 6.0f); 
     
     glDisable(GL_TEXTURE_2D);
-    glDisable(GL_LIGHTING); // <-- Desliga a sombra pra cor brilhar pura
+    glDisable(GL_LIGHTING); 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glDepthMask(GL_FALSE);
     
     if (polarity == 0) { // Azul Neon
-        glColor4f(0.0f, 0.8f, 1.0f, 1.0f);
+        glColor4f(0.0f, 0.8f, 1.0f, 0.8f);
     } else { // Vermelho Sangue Vívido
-        glColor4f(1.0f, 0.0f, 0.0f, 1.0f);
+        glColor4f(1.0f, 0.2f, 0.2f, 0.8f);
     }
     
-    glutSolidSphere(2.0, 8, 8);
+    glutSolidSphere(2.0, 12, 12);
     
     glDepthMask(GL_TRUE);
     glDisable(GL_BLEND);
-    glEnable(GL_LIGHTING); // <-- Restaura a luz do mundo
-    
+    glEnable(GL_LIGHTING); 
     glPopMatrix();
 }

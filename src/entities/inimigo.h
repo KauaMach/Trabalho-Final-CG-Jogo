@@ -37,7 +37,10 @@ public:
     int GetPolarity() const { return polarity; }
     bool IsAtivo() const { return ativo; }
     
-    void TomarDano(float dano) { 
+    virtual float GetCollisionDamageNanocell() const { return 10.0f; }
+    virtual float GetCollisionDamagePatient() const { return 0.0f; }
+    
+    virtual void TomarDano(float dano) { 
         health -= dano; 
         if(health <= 0.0f) ativo = false; 
     }
@@ -113,4 +116,79 @@ private:
     static GLuint bossTextureID;
     static GLuint bossDisplayListID;
     static bool bossCarregado;
+};
+
+// ==============================================================================
+// FASE 2: INIMIGOS
+// ==============================================================================
+
+// Vírus Gama (Alterna polaridade)
+class VirusGama : public Inimigo {
+private:
+    float timerBipolar;
+    float fireTimer;
+
+    static std::vector<Vertex> gamaVertices;
+    static GLuint gamaTextureID;
+    static GLuint gamaDisplayListID;
+    static bool gamaCarregado;
+
+public:
+    VirusGama(float x, float y, float z);
+    void Atualizar(float dt, const Player& player) override;
+    void Desenhar() override;
+    
+    static void InicializarModelo();
+};
+
+// Esporo Fúngico (Kamikaze)
+class EsporoFungico : public Inimigo {
+private:
+    float anguloGiro;
+    
+    static std::vector<Vertex> esporoVertices;
+    static GLuint esporoTextureID;
+    static GLuint esporoDisplayListID;
+    static bool esporoCarregado;
+
+public:
+    EsporoFungico(float x, float y, float z);
+    void Atualizar(float dt, const Player& player) override;
+    void Desenhar() override;
+    void Destruir() override;
+
+    float GetCollisionDamageNanocell() const override { return 20.0f; }
+    float GetCollisionDamagePatient() const override { return 5.0f; }
+
+    static void InicializarModelo();
+};
+
+// BOSS 2: PNEUMOCOCO GIGANTE
+class PneumococoGigante : public Inimigo {
+public:
+    PneumococoGigante(float x, float y, float z);
+    
+    void Atualizar(float dt, const Player& player) override;
+    void Desenhar() override;
+    void Destruir() override;
+    void TomarDano(float dano) override;
+    bool IsBoss() const override { return true; }
+    
+    float GetMaxHealth() const { return maxHealth; }
+    float GetCurrentHealth() const { return health; }
+    
+    static void InicializarModelo();
+
+private:
+    float maxHealth;
+    float cicloInspiracao;
+    bool isInspirando; 
+    
+    float attackTimer;
+    float attackAngle;
+    
+    static std::vector<Vertex> pneuVertices;
+    static GLuint pneuTextureID;
+    static GLuint pneuDisplayListID;
+    static bool pneuCarregado;
 };

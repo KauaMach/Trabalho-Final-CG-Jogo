@@ -150,7 +150,11 @@ void Colisao::ChecarColisaoPlayer(Player &player, std::vector<Inimigo *> &inimig
         if (distZ < (comprimentoNave + compInimigo) && distXY < (raioNave + raioInimigo))
         {
             // COLISAO DETECTADA ENTRE NAVE E INIMIGO!
-            player.DamageNanocell(10.0f);
+            player.DamageNanocell(inimigo->GetCollisionDamageNanocell());
+            float dmgPatient = inimigo->GetCollisionDamagePatient();
+            if (dmgPatient > 0.0f) {
+                player.DamagePatient(dmgPatient);
+            }
             globalParticles.SpawnExplosion(inimigo->GetX(), inimigo->GetY(), inimigo->GetZ(), inimigo->GetPolarity(), 40);
             inimigo->Destruir();
             enemiesKilled++;

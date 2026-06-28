@@ -1,7 +1,14 @@
 #include "MenuUI.h"
+#include <iostream>
+
+extern int currentPhase;
+extern bool fase2Desbloqueada;
+extern bool unlockAllPhasesForTesting;
 #include "core/AudioManager.h"
 #include "entities/Player.h"
 #include <iostream>
+extern void ResetGame();
+
 
 extern GameState currentState;    // Definido na main.cpp
 extern AudioManager audioManager; // Definido na main.cpp
@@ -119,21 +126,35 @@ void MenuUI::HandleClick(int mouseX, int realMouseY, GameState &state)
         if (mouseX >= 120.0f && mouseX <= 900.0f && realMouseY >= 450.0f && realMouseY <= 560.0f)
         {
             audioManager.PlayClickSound();
+            currentPhase = 1;
+            ResetGame();
             state = STATE_PLAYING; // Fase 1 ativa
             return;
         }
-        // Fase 2 (Bloqueada)
+        // Fase 2 (Bloqueada/Desbloqueada Dinamicamente)
         if (mouseX >= 120.0f && mouseX <= 900.0f && realMouseY >= 310.0f && realMouseY <= 460.0f)
         {
             audioManager.PlayClickSound();
-            std::cout << "FASE 2 BLOQUEADA!" << std::endl;
+            if (fase2Desbloqueada || unlockAllPhasesForTesting) {
+                currentPhase = 2;
+                ResetGame();
+                state = STATE_PLAYING; // Fase 2 ativa
+            } else {
+                std::cout << "FASE 2 BLOQUEADA! Derrote o Leukocyte Corrupto na Fase 1." << std::endl;
+            }
             return;
         }
-        // Fase 3 (Bloqueada)
+        // Fase 3 (Bloqueada ou Debug Mode)
         if (mouseX >= 120.0f && mouseX <= 900.0f && realMouseY >= 150.0f && realMouseY <= 300.0f)
         {
             audioManager.PlayClickSound();
-            std::cout << "FASE 3 BLOQUEADA!" << std::endl;
+            if (unlockAllPhasesForTesting) {
+                currentPhase = 3;
+                ResetGame();
+                state = STATE_PLAYING;
+            } else {
+                std::cout << "FASE 3 BLOQUEADA!" << std::endl;
+            }
             return;
         }
         // Botao Relatorio
@@ -143,12 +164,7 @@ void MenuUI::HandleClick(int mouseX, int realMouseY, GameState &state)
             state = STATE_RELATORIO;
             return;
         }
-        // Botao Voltar
-        if (mouseX >= 30.0f && mouseX <= 200.0f && realMouseY >= 30.0f && realMouseY <= 100.0f)
-        {
-            audioManager.PlayClickSound();
-            state = STATE_MENU;
-        }
+
     }
     else if (state == STATE_PAUSE)
     {
@@ -163,7 +179,7 @@ void MenuUI::HandleClick(int mouseX, int realMouseY, GameState &state)
         if (mouseX >= 415.0f && mouseX <= 590.0f && realMouseY >= 320.0f && realMouseY <= 350.0f)
         {
             audioManager.PlayClickSound();
-            player.Reset(); // Reposiciona a nave, zera a vida e o surge, e apaga lasers!
+            ResetGame(); // Reposiciona a nave, zera a vida e o surge, apaga lasers, zera a fase e remove os inimigos!
             state = STATE_PLAYING;
             return;
         }
@@ -187,8 +203,17 @@ void MenuUI::HandleClick(int mouseX, int realMouseY, GameState &state)
         if (mouseX >= 277.0f && mouseX <= 657.0f && realMouseY >= 162.0f && realMouseY <= 210.0f)
         {
             audioManager.PlayClickSound();
-            std::cout << "PROXIMA FASE NAO IMPLEMENTADA, INDO PARA SELECAO" << std::endl;
-            state = STATE_SELECAO_FASE;
+            if (currentPhase == 1) {
+                currentPhase = 2;
+                fase2Desbloqueada = true;
+                ResetGame();
+                state = STATE_PLAYING;
+            } else if (currentPhase == 2) {
+                std::cout << "FASE 3 AINDA NAO IMPLEMENTADA. AGUARDE A PROXIMA ATUALIZACAO." << std::endl;
+                state = STATE_SELECAO_FASE;
+            } else {
+                state = STATE_SELECAO_FASE;
+            }
         }
         // Hitbox Tentar Novamente (BOTAO DO MEIO)
         else if (mouseX >= 277.0f && mouseX <= 657.0f && realMouseY >= 100.0f && realMouseY <= 147.0f)
@@ -294,23 +319,22 @@ void MenuUI::Render(GameState state)
     {
         Renderer::DrawTexture(fasesTexture, 0, 0, 1024, 768);
 
-        // Desenha o cadeado em cima da Fase 2
-        // Calculado no centro da hitbox da Fase 2 (X=490, Y=385)
-        Renderer::DrawTexture(cadeadoTexture, 450, 330, 80, 80);
+        // Desenha cadeado da Fase 2 se não liberada e debug mode estiver off
+        if (!fase2Desbloqueada && !unlockAllPhasesForTesting) {
+            Renderer::DrawTexture(cadeadoTexture, 450, 330, 80, 80);
+        }
 
         // Desenha o cadeado em cima da Fase 3
-        Renderer::DrawTexture(cadeadoTexture, 450, 165, 80, 80);
+        if (!unlockAllPhasesForTesting) {
+            Renderer::DrawTexture(cadeadoTexture, 490 - 45, 220 - 45, 90, 90);
+        }
 
         // Efeito Hover FASE 1
         if (hoverX >= 120.0f && hoverX <= 900.0f && hoverY >= 450.0f && hoverY <= 560.0f)
         {
             Renderer::DrawSemiTransparentRect(120, 900, 450, 560, 0.0f, 1.0f, 0.3f, 0.15f);
         }
-        // Efeito Hover Voltar
-        if (hoverX >= 30.0f && hoverX <= 200.0f && hoverY >= 30.0f && hoverY <= 100.0f)
-        {
-            Renderer::DrawSemiTransparentRect(30, 200, 30, 100, 0.0f, 1.0f, 0.3f, 0.15f);
-        }
+
     }
     else if (state == STATE_RELATORIO)
     {

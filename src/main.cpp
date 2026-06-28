@@ -9,8 +9,8 @@
 #include "core/ParticleSystem.h"
 #include <cstdlib> // Para rand()
 
-// Variavel de Debug (Controla a exibicao dos fios de colisao)
-bool showCollisionBoxes = false;
+bool showCollisionBoxes = true;        // Variavel de Debug (Controla a exibicao dos fios de colisao)
+bool unlockAllPhasesForTesting = true; // ATALHO: Desbloqueia todas as fases no menu de forma instantânea
 
 GameState currentState = STATE_MENU;
 MenuUI menuUI;
@@ -21,17 +21,24 @@ int cameraMode = 3; // 3 Top-Down (Padrao)
 
 // Sistema de Gerenciamento da Horda (Boids e Inimigos)
 std::vector<Inimigo *> listaInimigos;
-int spawnTimer = 220;     // Alfa nasce 20 frames (aprox 0.3s) apos o jogo comecar
-int spawnCocoTimer = 360; // Coco nasce 2 segundos apos o jogo comecar
-
+// --- Spawner e Fases ---
+int currentPhase = 1;
 float phase1Time = 0.0f;
+float phase2Time = 0.0f;
+float spawnTimer = 0.0f;
+float spawnCocoTimer = 0.0f;
 bool bossSpawned = false;
+bool boss2Spawned = false;
+bool fase2Desbloqueada = false; // Desbloqueio progressivo
+
 float gameTimer = 0.0f;
 int enemiesKilled = 0;
 
 ParticleSystem globalParticles;
 std::vector<EnemyProjectile> enemyLasers;
 std::vector<GLuint> bgFramesFase1;
+std::vector<GLuint> bgFramesFase2;
+int currentBgFrame = 0;
 
 void ResetGame()
 {
@@ -45,9 +52,11 @@ void ResetGame()
     gameTimer = 0.0f;
     enemiesKilled = 0;
     bossSpawned = false;
+    boss2Spawned = false;
     spawnTimer = 220;
     spawnCocoTimer = 360;
     phase1Time = 0.0f;
+    phase2Time = 0.0f;
 
     player.Reset();
 }
@@ -63,19 +72,27 @@ void Init()
     BacteriaCoco::InicializarModelo();
     LeukocyteCorrupto::InicializarModelo();
 
+    // Inimigos da Fase 2
+    VirusGama::InicializarModelo();
+    EsporoFungico::InicializarModelo();
+    PneumococoGigante::InicializarModelo();
+
     // Carrega frames do cenário DEPOIS das UIs essenciais (pra não estourar VRAM)
-    std::cout << "Carregando 120 frames de cenário... Aguarde!" << std::endl;
-    for (int i = 1; i <= 120; i++)
+    std::cout << "Carregando 240 frames de cenário duplo... Aguarde!" << std::endl;
+    for (int i = 1; i <= 240; i++)
     {
         char buf[256];
         sprintf(buf, "assets/textures/fundo-fase1_frames/frame_%03d.jpg", i);
         bgFramesFase1.push_back(Renderer::LoadTexture(buf));
+
+        char buf2[256];
+        sprintf(buf2, "assets/textures/fundo-fase2_frames/frame_%03d.jpg", i);
+        bgFramesFase2.push_back(Renderer::LoadTexture(buf2));
     }
     std::cout << "Frames carregados com sucesso!" << std::endl;
 
     glEnable(GL_TEXTURE_2D);
 
-    // Matriz de Projecao (Ortografica para 2D inicial)
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     gluOrtho2D(0.0, 1024.0, 0.0, 768.0);
@@ -107,14 +124,22 @@ void Display()
         glDisable(GL_DEPTH_TEST);
         glDisable(GL_LIGHTING);
 
-        if (!bgFramesFase1.empty())
-        {
-            int currentFrame = (int)(gameTimer * 8.0f) % 120; // 8 FPS super arrastado/lento
-            Renderer::DrawTexture(bgFramesFase1[currentFrame], 0, 0, 1024, 768);
+        // 24 FPS (mais fluido) em loop de 240 frames
+        int currentFrameCalculado = (int)(gameTimer * 24.0f) % 240;
 
-            // Película escura (Overlay) de 60% preto para não ofuscar o jogo 3D
-            Renderer::DrawSemiTransparentRect(0, 1024, 0, 768, 0.0f, 0.0f, 0.0f, 0.6f);
+        // Loop da Animação do Background
+        if (!bgFramesFase1.empty() && currentPhase == 1)
+        {
+            Renderer::DrawTexture(bgFramesFase1[currentFrameCalculado], 0, 0, 1024, 768);
         }
+        else if (!bgFramesFase2.empty() && currentPhase == 2)
+        {
+            Renderer::DrawTexture(bgFramesFase2[currentFrameCalculado], 0, 0, 1024, 768);
+        }
+
+        // Película escura (Overlay) para destacar o Neon e as balas do Bullet-Hell
+        float escurecimento = (currentPhase == 1) ? 0.30f : 0.70f;
+        Renderer::DrawSemiTransparentRect(0, 1024, 0, 768, 0.0f, 0.0f, 0.0f, escurecimento);
 
         glEnable(GL_DEPTH_TEST);
         glPopMatrix();
@@ -179,6 +204,18 @@ void Display()
         }
         }
 
+        // --- ILUMINAÇÃO GLOBAL CÂMERA (SOL ACOMPANHA) ---
+        GLfloat ambientLight[] = {0.6f, 0.6f, 0.6f, 1.0f};
+        glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambientLight);
+
+        GLfloat lightDiffuse[] = {0.9f, 0.9f, 0.9f, 1.0f};
+        GLfloat lightSpecular[] = {1.0f, 1.0f, 1.0f, 1.0f};
+        glLightfv(GL_LIGHT0, GL_DIFFUSE, lightDiffuse);
+        glLightfv(GL_LIGHT0, GL_SPECULAR, lightSpecular);
+        GLfloat lightPos[] = {0.0f, 100.0f, -300.0f, 1.0f}; // Sol 300 unidades a frente da tela
+        glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
+        // ------------------------------------------------
+
         // Ativando teste de profundidade para o 3D funcionar perfeitamente
         glEnable(GL_DEPTH_TEST);
 
@@ -225,13 +262,27 @@ void Display()
         {
             if (ini->IsBoss())
             {
-                LeukocyteCorrupto *boss = (LeukocyteCorrupto *)ini;
-                float hpPercent = boss->GetCurrentHealth() / boss->GetMaxHealth();
+                float hpPercent = 1.0f;
+                int pol = 1;
+                std::string bossName = "";
+
+                if (currentPhase == 1) {
+                    LeukocyteCorrupto *boss = (LeukocyteCorrupto *)ini;
+                    hpPercent = boss->GetCurrentHealth() / boss->GetMaxHealth();
+                    pol = boss->GetPolarity();
+                    bossName = "LEUKOCYTE CORRUPTO";
+                } else {
+                    // Boss Fase 2
+                    PneumococoGigante *boss = (PneumococoGigante *)ini;
+                    hpPercent = boss->GetCurrentHealth() / boss->GetMaxHealth();
+                    pol = boss->GetPolarity();
+                    bossName = "PNEUMOCOCO GIGANTE";
+                }
 
                 glMatrixMode(GL_PROJECTION);
                 glPushMatrix();
                 glLoadIdentity();
-                gluOrtho2D(0, 1024, 1000, 0); // Mesmo setup da Player HUD (Y invertido, 0 topo)
+                gluOrtho2D(0, 1024, 1000, 0); 
                 glMatrixMode(GL_MODELVIEW);
                 glPushMatrix();
                 glLoadIdentity();
@@ -239,7 +290,7 @@ void Display()
                 // Texto do Boss
                 glColor3f(1.0f, 0.2f, 0.2f);
                 glRasterPos2f(512.0f - 80.0f, 150.0f);
-                std::string bossName = "LEUKOCYTE CORRUPTO";
+                
                 for (char c : bossName)
                     glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, c);
 
@@ -253,8 +304,8 @@ void Display()
                 glEnd();
 
                 // Barra de Vida Frente
-                if (boss->GetPolarity() == 0)
-                    glColor3f(0.0f, 0.5f, 1.0f); // Azul se estiver absorvendo azul
+                if (pol == 0)
+                    glColor3f(0.0f, 0.5f, 1.0f); // Azul
                 else
                     glColor3f(1.0f, 0.1f, 0.1f); // Vermelho
 
@@ -330,7 +381,7 @@ void KeyboardDown(unsigned char key, int x, int y)
     if (key < 256)
         keyState[key] = true;
 
-    // Sair do jogo com ESC
+    // Sair ou Voltar com ESC
     if (key == 27)
     { // ESC
         if (currentState == STATE_PLAYING)
@@ -340,6 +391,19 @@ void KeyboardDown(unsigned char key, int x, int y)
         else if (currentState == STATE_PAUSE)
         {
             currentState = STATE_PLAYING;
+        }
+        else if (currentState == STATE_CREDITOS ||
+                 currentState == STATE_CONTROLES ||
+                 currentState == STATE_CONFIG ||
+                 currentState == STATE_SELECAO_FASE)
+        {
+            audioManager.PlayClickSound();
+            currentState = STATE_MENU;
+        }
+        else if (currentState == STATE_RELATORIO)
+        {
+            audioManager.PlayClickSound();
+            currentState = STATE_SELECAO_FASE;
         }
     }
 
@@ -385,56 +449,80 @@ void Timer(int value)
         phase1Time += 0.016f; // Atualiza o relógio da fase (60 fps = 0.016s por frame)
         gameTimer += 0.016f;
 
-        // --- GATILHO DO BOSS ---
-        // Nasce aos 300s (5 minutos) ou IMEDIATAMENTE se o jogador estiver muito bem de vida (HSP >= 90.0f)
-        if (!bossSpawned && (phase1Time >= 300.0f || player.GetPatientHealth() >= 90.0f))
+        // --- GATILHO DOS BOSSES ---
+        if (currentPhase == 1)
         {
-            bossSpawned = true;
-            listaInimigos.push_back(new LeukocyteCorrupto(0.0f, player.GetY(), player.GetZ() - 350.0f));
-
-            // Destroi todos os outros inimigos menores para focar na Boss Fight
-            for (Inimigo *ini : listaInimigos)
+            if (!bossSpawned && (phase1Time >= 300.0f || player.GetPatientHealth() >= 90.0f))
             {
-                if (!ini->IsBoss())
-                    ini->Destruir();
+                bossSpawned = true;
+                listaInimigos.push_back(new LeukocyteCorrupto(0.0f, player.GetY(), player.GetZ() - 350.0f));
+                for (Inimigo *ini : listaInimigos)
+                {
+                    if (!ini->IsBoss())
+                        ini->Destruir();
+                }
+            }
+        }
+        else if (currentPhase == 2)
+        {
+            phase2Time += 0.016f; // Atualiza o relógio da fase 2
+            if (!boss2Spawned && (phase2Time >= 120.0f || player.GetPatientHealth() >= 90.0f))
+            { // Gatilho aos 120s
+                boss2Spawned = true;
+                listaInimigos.push_back(new PneumococoGigante(0.0f, player.GetY(), player.GetZ() - 350.0f));
+                for (Inimigo *ini : listaInimigos)
+                {
+                    if (!ini->IsBoss())
+                        ini->Destruir();
+                }
             }
         }
 
-        // --- GERADOR DE VÍRUS ALFA (Enxame em Formação V) ---
-        // Só continua nascendo se o Boss não tiver spawnado
-        if (!bossSpawned)
+        // --- GERADOR DE INIMIGOS MENORES ---
+        if ((currentPhase == 1 && !bossSpawned) || (currentPhase == 2 && !boss2Spawned))
         {
-            // Intervalo para 240 frames (4 segundos) pois nascem 5 por vez
             spawnTimer++;
-            if (spawnTimer >= 240)
+            int limiteSpawn = (currentPhase == 1) ? 240 : 80; // Fase 2 é 3x mais rápida
+            if (spawnTimer >= limiteSpawn)
             {
                 spawnTimer = 0;
-                // Sorteia o líder um pouco mais centralizado para os alas não saírem muito da arena
                 float randomX = (rand() % 340) - 170.0f;
                 float spawnZ = player.GetZ() - 800.0f;
 
-                // Lider (Ponta do V)
-                listaInimigos.push_back(new VirusAlfa(randomX, player.GetY(), spawnZ));
-                // Alas Internos
-                listaInimigos.push_back(new VirusAlfa(randomX - 45.0f, player.GetY(), spawnZ + 50.0f));
-                listaInimigos.push_back(new VirusAlfa(randomX + 45.0f, player.GetY(), spawnZ + 50.0f));
-                // Alas Externos
-                listaInimigos.push_back(new VirusAlfa(randomX - 90.0f, player.GetY(), spawnZ + 100.0f));
-                listaInimigos.push_back(new VirusAlfa(randomX + 90.0f, player.GetY(), spawnZ + 100.0f));
+                if (currentPhase == 1)
+                {
+                    listaInimigos.push_back(new VirusAlfa(randomX, player.GetY(), spawnZ));
+                    listaInimigos.push_back(new VirusAlfa(randomX - 45.0f, player.GetY(), spawnZ + 50.0f));
+                    listaInimigos.push_back(new VirusAlfa(randomX + 45.0f, player.GetY(), spawnZ + 50.0f));
+                    listaInimigos.push_back(new VirusAlfa(randomX - 90.0f, player.GetY(), spawnZ + 100.0f));
+                    listaInimigos.push_back(new VirusAlfa(randomX + 90.0f, player.GetY(), spawnZ + 100.0f));
+                }
+                else if (currentPhase == 2)
+                {
+                    float gamaSpawnZ = player.GetZ() - 550.0f; // Nascem mais perto
+                    listaInimigos.push_back(new VirusGama(randomX - 40.0f, player.GetY(), gamaSpawnZ));
+                    listaInimigos.push_back(new VirusGama(randomX + 40.0f, player.GetY(), gamaSpawnZ));
+                }
             }
-        }
 
-        // --- GERADOR DE BACTÉRIA COCO (Tanque Vermelho) ---
-        if (!bossSpawned)
-        {
-            // Nasce menos frequentemente que o Alfa (a cada ~8 segundos)
             spawnCocoTimer++;
-            if (spawnCocoTimer >= 480)
+            int limiteCocoSpawn = (currentPhase == 1) ? 480 : 180;
+            if (spawnCocoTimer >= limiteCocoSpawn)
             {
                 spawnCocoTimer = 0;
                 float randomX = (rand() % 340) - 170.0f;
                 float spawnZ = player.GetZ() - 800.0f;
-                listaInimigos.push_back(new BacteriaCoco(randomX, player.GetY(), spawnZ));
+                if (currentPhase == 1)
+                {
+                    listaInimigos.push_back(new BacteriaCoco(randomX, player.GetY(), spawnZ));
+                }
+                else if (currentPhase == 2)
+                {
+                    // Esporo Fungico (Kamikaze ultra rápido) vem em grupos de 3!
+                    listaInimigos.push_back(new EsporoFungico(randomX, player.GetY(), spawnZ));
+                    listaInimigos.push_back(new EsporoFungico(randomX - 60.0f, player.GetY(), spawnZ + 20.0f));
+                    listaInimigos.push_back(new EsporoFungico(randomX + 60.0f, player.GetY(), spawnZ + 20.0f));
+                }
             }
         }
 
@@ -456,6 +544,10 @@ void Timer(int value)
             {
                 if (ini->IsBoss())
                 {
+                    if (currentPhase == 1)
+                    {
+                        fase2Desbloqueada = true; // Libera Fase 2
+                    }
                     currentState = STATE_VICTORY;
                 }
                 delete ini;
