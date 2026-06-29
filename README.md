@@ -29,13 +29,11 @@
 5. [Fases e Progressão](#5-fases-e-progressão)
 6. [Inimigos](#6-inimigos)
 7. [Inteligência Artificial](#7-inteligência-artificial)
-8. [Sistema de Pontuação](#8-sistema-de-pontuação)
-9. [HUD e Interface](#9-hud-e-interface)
-10. [Recursos OpenGL Utilizados](#10-recursos-opengl-utilizados)
-11. [Arquitetura do Projeto](#11-arquitetura-do-projeto)
-12. [Dependências e Compilação](#12-dependências-e-compilação)
-13. [Referências e Inspirações](#13-referências-e-inspirações)
-14. [Equipe](#equipe)
+8. [HUD e Interface](#8-hud-e-interface)
+9. [Recursos OpenGL Utilizados](#9-recursos-opengl-utilizados)
+10. [Arquitetura do Projeto](#10-arquitetura-do-projeto)
+11. [Dependências e Compilação](#11-dependências-e-compilação)
+12. [Referências e Inspirações](#12-referências-e-inspirações)
 
 ---
 
@@ -192,15 +190,7 @@ Menu Principal
            (morte)                  (morte)                  (morte)
               └── Game Over ◄────────┴────────────────────────┘
 ```
-### Sistema de Ranking por Fase
-
-Ao final de cada fase é atribuído um ranking de **S** a **D** baseado em:
-- Total de kills realizados
-- Saúde do Paciente final (HSP)
-- Dano total recebido pelo nanobô
-- Maior combo de kills consecutivos
-- Tempo total da fase
-- Fases são desbloqueadas sequencialmente
+* **Nota:** As fases são desbloqueadas sequencialmente após a conclusão da anterior.
 
 ---
 
@@ -300,34 +290,7 @@ O Príon Mimético usa uma fila circular de **90 posições (x, y)** do jogador 
 4. O delay diminui de **1,5 s → 0,8 s** conforme a vida do Príon cai abaixo de 50%.
 ---
 
-## 8. Sistema de Pontuação
-
-| Evento | Pontos / Multiplicador |
-|---|---|
-| Kill — inimigo comum | 100 pts |
-| Kill — inimigo elite | 300 pts |
-| Boss derrotado | 2.000 pts |
-| Absorção de projétil (carga SURGE) | 10 pts por projétil |
-| Fase concluída sem morrer | Bônus +1.000 pts |
-| Combo ×5 (5 kills sem tomar dano) | Multiplicador ×2 |
-| Combo ×10 + absorção ativa | Multiplicador ×3 |
-| Kill durante SURGE ativo | Multiplicador ×5 |
-| Boss derrotado sem tomar dano | Multiplicador ×10 — Perfect Clear |
-
-### 8.1 Ranking de Fase
-
-| Rank | Critério |
-|---|---|
-| **S** | Pontuação ≥ 90% do máximo + zero mortes + HSP ≥ 90% |
-| **A** | Pontuação ≥ 70% ou HSP ≥ 75% |
-| **B** | Pontuação ≥ 50% ou fase concluída com até 1 morte |
-| **C** | Fase concluída com até 2 mortes |
-| **D** | Fase concluída com 3+ mortes ou via continue |
-
-
----
-
-## 9. HUD e Interface
+## 8. HUD e Interface
 
 O HUD é desenhado via `glOrtho` em coordenadas de tela (overlay 2D sobre a cena 3D), sem fontes externas — texto via `glutBitmapCharacter`.
 
@@ -337,8 +300,6 @@ O HUD é desenhado via `glOrtho` em coordenadas de tela (overlay 2D sobre a cena
 │  VIDA   ███████░░  78%      HSP   ██████░░░  62%        │
 │                                                         │
 │  ● POLARIDADE: AZUL🔵        SURGE ████░░░░  47%        │
-│                                                         │
-│  SCORE: 48.200   COMBO: x3                              │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -348,20 +309,18 @@ O HUD é desenhado via `glOrtho` em coordenadas de tela (overlay 2D sobre a cena
 | **Barra de SURGE** | Superior esquerdo — abaixo da vida. Cor muda conforme polaridade ativa |
 | **Indicador de Polaridade** | Centro superior — círculo pulsante com cor e nome do estado ativo |
 | **Medidor HSP** | Superior direito — barra vertical de 0% a 100% com valor numérico |
-| **Pontuação** | Superior direito — atualizada em tempo real |
-| **Combo counter** | Centro da tela — aparece quando combo ≥ 2, some após 2 s sem kill |
 | **Timer de fase** | Inferior direito — contagem até spawn forçado do boss |
 | **Nome da fase** | Inferior esquerdo — tag permanente durante o jogo |
 | **Mensagem de evento** | Centro inferior — alertas como `BOSS EM APROXIMAÇÃO` por 2 s |
 
-### 9.1 Telas do Jogo
+### 8.1 Telas do Jogo
 
 - **Menu Principal:** título animado, opções Jogar / Controles/configs / Créditos / Sair
 - **Pausa:** overlay semi-transparente — Continuar / Reiniciar Fase / Sair
-- **Game Over:** animação de dissolução, pontuação final, botão de reinício
-- **Resultado:** rank, pontuação, HSP final, fragmentos coletados, próxima fase
+- **Game Over:** animação de dissolução, botão de reinício
+- **Resultado:** HSP final, fragmentos coletados, próxima fase
 ---
-## 10. Recursos OpenGL Utilizados
+## 9. Recursos OpenGL Utilizados
 
 | Recurso | Aplicação no Jogo |
 |---|---|
@@ -380,9 +339,9 @@ O HUD é desenhado via `glOrtho` em coordenadas de tela (overlay 2D sobre a cena
 
 ---
 
-## 11. Arquitetura do Projeto
+## 10. Arquitetura do Projeto
 
-### 11.1 Estrutura de Arquivos
+### 10.1 Estrutura de Arquivos
 
 A arquitetura foi planejada de forma modular e orientada a objetos para separar a lógica de negócio das chamadas de baixo nível do OpenGL, facilitando a manutenção e a adequação aos requisitos de multiplataforma.
 
@@ -402,7 +361,7 @@ NTF-CG-Jogo/
 ```
 
 
-### 11.2 Loop de Jogo
+### 10.2 Loop de Jogo
 
 ```
 glutTimerFunc(16ms)
@@ -426,7 +385,7 @@ glutDisplayFunc → render()
 **Estados do jogo:** `MENU → PLAYING → PAUSED → GAMEOVER → RESULT`
 
 
-### 11.3 Detecção de Colisão
+### 10.3 Detecção de Colisão
 
 **Fase Larga (Broadphase):** grade espacial 32×32 células. Apenas entidades na mesma célula ou vizinhas são testadas — reduz O(n²) para ~O(n).
 
@@ -442,9 +401,9 @@ projetil.cor != jogador.polaridade  →  dano normal + feedback visual
 ```
 
 ---
-## 12. Dependências e Compilação
+## 11. Dependências e Compilação
 
-### 12.1 Dependências
+### 11.1 Dependências
 
 | Biblioteca | Uso |
 |---|---|
@@ -455,7 +414,7 @@ projetil.cor != jogador.polaridade  →  dano normal + feedback visual
 | **SDL2_mixer** | Reprodução de OGG (música) e WAV (SFX) |
 | **stb_image.h** | Carga de PNG/JPG para texturas (header-only) |
 
-### 12.2 Instalação das Dependências
+### 11.2 Instalação das Dependências
 
 **Fedora / RHEL:**
 ```bash
@@ -472,7 +431,7 @@ sudo apt install freeglut3-dev libsdl2-dev libsdl2-mixer-dev libglew-dev
 brew install freeglut sdl2 sdl2_mixer glew
 ```
 
-### 12.3 Compilação
+### 11.3 Compilação
 
 ```bash
 # Linux / macOS (Use -j4 para utilizar múltiplos núcleos e compilar mais rápido)
@@ -495,7 +454,7 @@ LIBS     = -lGL -lGLU -lglut -lGLEW -lSDL2_mixer
 TARGET   = imunidade
 ```
 
-### 12.4 Flags de Compilação
+### 11.4 Flags de Compilação
 
 | Plataforma | Flags de Linker |
 |---|---|
@@ -506,17 +465,16 @@ TARGET   = imunidade
 
 ---
 
-## 13. Referências e Inspirações
+## 12. Referências e Inspirações
 
-### 13.1 Jogos de Referência
+### 12.1 Jogos de Referência
 
 | Jogo | Elemento Adotado |
 |---|---|
-| **Space Invaders** (Taito, 1978) | Estrutura base de shmup: oleadas, progressão por ondas, pontuação por kill |
+| **Space Invaders** (Taito, 1978) | Estrutura base de shmup: oleadas, progressão por ondas |
 | **Ikaruga** (Treasure, 2001) | Sistema de polaridade cromática (absorção vs. dano), mecânica de SURGE |
 | **Galaga** (Namco, 1981) | Padrões de ataque em enxame, dive-bombing, formações de inimigos |
 | **Xenon II Megablast** (Bitmap Bros, 1989) | Scroll com obstáculos orgânicos, power-ups e boss de fase |
-| **Deluxe Galaga** (Amiga, 1994) | Sistema de pontuação com multiplicadores e combo |
 
 ### Algoritmos e Artigos
 
@@ -531,18 +489,5 @@ TARGET   = imunidade
 - [SDL2_mixer](https://www.libsdl.org/projects/SDL_mixer/) — Áudio multiplataforma
 - [stb_image](https://github.com/nothings/stb) — Carregamento de imagens (header-only)
 - [tinyobjloader](https://github.com/tinyobjloader/tinyobjloader) — Parser de arquivos OBJ
-
----
-
-## Equipe
-
-| Membro | Função |
-|---|---|
-| [Seu Nome] | Desenvolvimento completo |
-
-**Disciplina:** Computação Gráfica (DC/CCN032)
-**Período:** 2026.1
-**Instituição:** Universidade Federal do Piauí (UFPI)
-**Professor:** Prof. Dr. Laurindo de Sousa Britto Neto
 
 ---
