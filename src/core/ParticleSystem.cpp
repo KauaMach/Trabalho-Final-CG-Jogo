@@ -20,7 +20,7 @@ void ParticleSystem::Update(float dt) {
         p.life -= dt;
     }
 
-    // Remover particulas mortas
+    // Liberação de memória: remove partículas com ciclo de vida esgotado
     particles.erase(std::remove_if(particles.begin(), particles.end(), 
         [](const Particle& p) { return p.life <= 0.0f; }), particles.end());
 }
@@ -48,8 +48,8 @@ void ParticleSystem::Draw() {
 
         float size = 2.0f; // Tamanho do fragmento
 
-        // Para performance, desenhamos um quadradinho virado pra frente 
-        // (Billboarding muito basico)
+        // Para otimizar a performance, aplicamos a técnica de Billboarding simplificado
+        // (desenhando um polígono 2D voltado para a câmera)
         glVertex3f(p.x - size, p.y - size, p.z);
         glVertex3f(p.x + size, p.y - size, p.z);
         glVertex3f(p.x + size, p.y + size, p.z);
@@ -69,7 +69,7 @@ void ParticleSystem::SpawnExplosion(float x, float y, float z, int polarity, int
         p.y = y;
         p.z = z;
         
-        // Velocidades aleatorias esfericas
+        // Velocidades aleatórias com distribuição esférica
         // Rand entre -150 e 150 para x e y
         p.vx = ((rand() % 300) - 150.0f);
         p.vy = ((rand() % 300) - 150.0f);

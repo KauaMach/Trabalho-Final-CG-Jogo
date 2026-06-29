@@ -9,7 +9,7 @@
 #include "core/ParticleSystem.h"
 #include <cstdlib> // Para rand()
 
-bool showCollisionBoxes = true;        // Variavel de Debug (Controla a exibicao dos fios de colisao)
+bool showCollisionBoxes = false;       // Variavel de Debug (Controla a exibicao dos fios de colisao)
 bool unlockAllPhasesForTesting = true; // ATALHO: Desbloqueia todas as fases no menu de forma instantânea
 
 GameState currentState = STATE_MENU;
@@ -25,10 +25,12 @@ std::vector<Inimigo *> listaInimigos;
 int currentPhase = 1;
 float phase1Time = 0.0f;
 float phase2Time = 0.0f;
+float phase3Time = 0.0f;
 float spawnTimer = 0.0f;
 float spawnCocoTimer = 0.0f;
 bool bossSpawned = false;
 bool boss2Spawned = false;
+bool boss3Spawned = false;
 bool fase2Desbloqueada = false; // Desbloqueio progressivo
 
 float gameTimer = 0.0f;
@@ -38,6 +40,7 @@ ParticleSystem globalParticles;
 std::vector<EnemyProjectile> enemyLasers;
 std::vector<GLuint> bgFramesFase1;
 std::vector<GLuint> bgFramesFase2;
+std::vector<GLuint> bgFramesFase3;
 int currentBgFrame = 0;
 
 void ResetGame()
@@ -53,10 +56,13 @@ void ResetGame()
     enemiesKilled = 0;
     bossSpawned = false;
     boss2Spawned = false;
+    boss3Spawned = false;
     spawnTimer = 220;
     spawnCocoTimer = 360;
     phase1Time = 0.0f;
     phase2Time = 0.0f;
+    phase3Time = 0.0f;
+    // phase3Time = 0.0f; // If declared
 
     player.Reset();
 }
@@ -76,6 +82,9 @@ void Init()
     VirusGama::InicializarModelo();
     EsporoFungico::InicializarModelo();
     PneumococoGigante::InicializarModelo();
+    PrionMimetico::InicializarModelo();
+    VirusDelta::InicializarModelo();
+    NexusOmega::InicializarModelo();
 
     // Carrega frames do cenário DEPOIS das UIs essenciais (pra não estourar VRAM)
     std::cout << "Carregando 240 frames de cenário duplo... Aguarde!" << std::endl;
@@ -88,6 +97,13 @@ void Init()
         char buf2[256];
         sprintf(buf2, "assets/textures/fundo-fase2_frames/frame_%03d.jpg", i);
         bgFramesFase2.push_back(Renderer::LoadTexture(buf2));
+
+        if (i <= 219)
+        {
+            char buf3[256];
+            sprintf(buf3, "assets/textures/fundo-fase3_frames/frame_%03d.jpg", i);
+            bgFramesFase3.push_back(Renderer::LoadTexture(buf3));
+        }
     }
     std::cout << "Frames carregados com sucesso!" << std::endl;
 
@@ -124,17 +140,21 @@ void Display()
         glDisable(GL_DEPTH_TEST);
         glDisable(GL_LIGHTING);
 
-        // 24 FPS (mais fluido) em loop de 240 frames
-        int currentFrameCalculado = (int)(gameTimer * 24.0f) % 240;
-
         // Loop da Animação do Background
         if (!bgFramesFase1.empty() && currentPhase == 1)
         {
-            Renderer::DrawTexture(bgFramesFase1[currentFrameCalculado], 0, 0, 1024, 768);
+            int frame = (int)(gameTimer * 24.0f) % bgFramesFase1.size();
+            Renderer::DrawTexture(bgFramesFase1[frame], 0, 0, 1024, 768);
         }
         else if (!bgFramesFase2.empty() && currentPhase == 2)
         {
-            Renderer::DrawTexture(bgFramesFase2[currentFrameCalculado], 0, 0, 1024, 768);
+            int frame = (int)(gameTimer * 24.0f) % bgFramesFase2.size();
+            Renderer::DrawTexture(bgFramesFase2[frame], 0, 0, 1024, 768);
+        }
+        else if (!bgFramesFase3.empty() && currentPhase == 3)
+        {
+            int frame = (int)(gameTimer * 24.0f) % bgFramesFase3.size();
+            Renderer::DrawTexture(bgFramesFase3[frame], 0, 0, 1024, 768);
         }
 
         // Película escura (Overlay) para destacar o Neon e as balas do Bullet-Hell
@@ -219,22 +239,7 @@ void Display()
         // Ativando teste de profundidade para o 3D funcionar perfeitamente
         glEnable(GL_DEPTH_TEST);
 
-        // Desenha um grid verde estilo Tron no chao (Y = -20) para dar nocao de velocidade e profundidade
-        glDisable(GL_LIGHTING);
-        glDisable(GL_TEXTURE_2D);
-        glBegin(GL_LINES);
-        glColor3f(0.0f, 0.5f, 0.0f);
-        // Linhas correndo junto com a nave no Z
-        for (int i = -1000; i <= 1000; i += 50)
-        {
-            glVertex3f(i, -20.0f, player.GetZ() - 1500.0f);
-            glVertex3f(i, -20.0f, player.GetZ() + 1000.0f);
-
-            float fixedZ = (int)(player.GetZ() / 50) * 50.0f; // Fixa as linhas horizontais na grade
-            glVertex3f(-1000.0f, -20.0f, fixedZ + i);
-            glVertex3f(1000.0f, -20.0f, fixedZ + i);
-        }
-        glEnd();
+        // Grade removida a pedido do usuário
 
         player.Draw();
 
@@ -266,23 +271,32 @@ void Display()
                 int pol = 1;
                 std::string bossName = "";
 
-                if (currentPhase == 1) {
+                if (currentPhase == 1)
+                {
                     LeukocyteCorrupto *boss = (LeukocyteCorrupto *)ini;
                     hpPercent = boss->GetCurrentHealth() / boss->GetMaxHealth();
                     pol = boss->GetPolarity();
                     bossName = "LEUKOCYTE CORRUPTO";
-                } else {
-                    // Boss Fase 2
+                }
+                else if (currentPhase == 2)
+                {
                     PneumococoGigante *boss = (PneumococoGigante *)ini;
                     hpPercent = boss->GetCurrentHealth() / boss->GetMaxHealth();
                     pol = boss->GetPolarity();
                     bossName = "PNEUMOCOCO GIGANTE";
                 }
+                else if (currentPhase == 3)
+                {
+                    NexusOmega *boss = (NexusOmega *)ini;
+                    hpPercent = boss->GetCurrentHealth() / boss->GetMaxHealth();
+                    pol = boss->GetPolarity();
+                    bossName = "NEXUS OMEGA";
+                }
 
                 glMatrixMode(GL_PROJECTION);
                 glPushMatrix();
                 glLoadIdentity();
-                gluOrtho2D(0, 1024, 1000, 0); 
+                gluOrtho2D(0, 1024, 1000, 0);
                 glMatrixMode(GL_MODELVIEW);
                 glPushMatrix();
                 glLoadIdentity();
@@ -290,7 +304,7 @@ void Display()
                 // Texto do Boss
                 glColor3f(1.0f, 0.2f, 0.2f);
                 glRasterPos2f(512.0f - 80.0f, 150.0f);
-                
+
                 for (char c : bossName)
                     glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, c);
 
@@ -369,7 +383,7 @@ void MouseDrag(int mouseX, int mouseY)
 void MouseMotion(int mouseX, int mouseY)
 {
     int realMouseY = 768 - mouseY;
-    if (currentState == STATE_MENU || currentState == STATE_SELECAO_FASE || currentState == STATE_RELATORIO || currentState == STATE_PAUSE || currentState == STATE_VICTORY || currentState == STATE_GAMEOVER)
+    if (currentState == STATE_MENU || currentState == STATE_SELECAO_FASE || currentState == STATE_PAUSE || currentState == STATE_VICTORY || currentState == STATE_GAMEOVER)
     {
         menuUI.HandleHover(mouseX, realMouseY);
         glutPostRedisplay();
@@ -399,11 +413,6 @@ void KeyboardDown(unsigned char key, int x, int y)
         {
             audioManager.PlayClickSound();
             currentState = STATE_MENU;
-        }
-        else if (currentState == STATE_RELATORIO)
-        {
-            audioManager.PlayClickSound();
-            currentState = STATE_SELECAO_FASE;
         }
     }
 
@@ -477,12 +486,26 @@ void Timer(int value)
                 }
             }
         }
+        else if (currentPhase == 3)
+        {
+            phase3Time += 0.016f; // Atualiza o relógio da fase 3
+            if (!boss3Spawned && (phase3Time >= 180.0f || player.GetPatientHealth() >= 90.0f))
+            { // Gatilho aos 180s
+                boss3Spawned = true;
+                listaInimigos.push_back(new NexusOmega(0.0f, player.GetY(), player.GetZ() - 400.0f));
+                for (Inimigo *ini : listaInimigos)
+                {
+                    if (!ini->IsBoss())
+                        ini->Destruir();
+                }
+            }
+        }
 
         // --- GERADOR DE INIMIGOS MENORES ---
-        if ((currentPhase == 1 && !bossSpawned) || (currentPhase == 2 && !boss2Spawned))
+        if ((currentPhase == 1 && !bossSpawned) || (currentPhase == 2 && !boss2Spawned) || (currentPhase == 3 && !boss3Spawned))
         {
             spawnTimer++;
-            int limiteSpawn = (currentPhase == 1) ? 240 : 80; // Fase 2 é 3x mais rápida
+            int limiteSpawn = (currentPhase == 1) ? 240 : (currentPhase == 2 ? 80 : 180);
             if (spawnTimer >= limiteSpawn)
             {
                 spawnTimer = 0;
@@ -502,6 +525,22 @@ void Timer(int value)
                     float gamaSpawnZ = player.GetZ() - 550.0f; // Nascem mais perto
                     listaInimigos.push_back(new VirusGama(randomX - 40.0f, player.GetY(), gamaSpawnZ));
                     listaInimigos.push_back(new VirusGama(randomX + 40.0f, player.GetY(), gamaSpawnZ));
+                }
+                else if (currentPhase == 3)
+                {
+                    float prionSpawnZ = player.GetZ() - 600.0f;
+
+                    // Alterna entre spawnar Príons ou Deltas
+                    if (rand() % 2 == 0)
+                    {
+                        listaInimigos.push_back(new PrionMimetico(randomX - 50.0f, player.GetY(), prionSpawnZ));
+                        listaInimigos.push_back(new PrionMimetico(randomX + 50.0f, player.GetY(), prionSpawnZ + 40.0f));
+                    }
+                    else
+                    {
+                        listaInimigos.push_back(new VirusDelta(player.GetY(), player.GetZ() - 800.0f, 0));
+                        listaInimigos.push_back(new VirusDelta(player.GetY(), player.GetZ() - 850.0f, 1));
+                    }
                 }
             }
 

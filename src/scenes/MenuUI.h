@@ -10,7 +10,6 @@ enum GameState {
     STATE_CONTROLES,
     STATE_CONFIG,
     STATE_SELECAO_FASE,
-    STATE_RELATORIO, // Tela de relatorio
     STATE_PLAYING,
     STATE_PAUSE,
     STATE_VICTORY,
@@ -31,7 +30,6 @@ private:
     GLuint configTexture;
     GLuint fasesTexture;
     GLuint cadeadoTexture;
-    GLuint relatorioTexture;
     GLuint pauseTexture;
     GLuint vitoriaTexture;
     GLuint derrotaTexture;

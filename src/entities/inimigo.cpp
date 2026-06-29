@@ -392,10 +392,10 @@ void BacteriaCoco::Desenhar()
 
 void BacteriaCoco::InicializarModelo()
 {
-    cocoTextureID = Renderer::LoadTexture("assets/textures/bacterium.png");
+    cocoTextureID = Renderer::LoadTexture("assets/textures/bacteria_coco.png");
     if (cocoTextureID == 0)
     {
-        std::cerr << "[AVISO] Nao foi possivel carregar a textura da Bacteria Coco." << std::endl;
+        std::cerr << "Falha ao carregar textura bacteria_coco.png!" << std::endl;
     }
 
     tinyobj::attrib_t attrib;
@@ -403,11 +403,9 @@ void BacteriaCoco::InicializarModelo()
     std::vector<tinyobj::material_t> materials;
     std::string warn, err;
 
-    bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, "assets/models/bacterium.obj", "assets/models/");
-
-    // if (!warn.empty()) std::cout << "WARN: " << warn << std::endl;
-    // if (!err.empty()) std::cerr << "ERR: " << err << std::endl;
-
+    bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, "assets/models/bacteria_coco.obj", "assets/models/");
+    if (!err.empty())
+        std::cerr << "ERR Coco: " << err << std::endl;
     if (!ret)
     {
         std::cerr << "Falha ao carregar assets/models/bacteria_coco.obj!" << std::endl;
@@ -754,22 +752,23 @@ GLuint LeukocyteCorrupto::bossTextureID = 0;
 
 void LeukocyteCorrupto::InicializarModelo()
 {
-    if (bossCarregado)
-        return;
-
-    bossTextureID = Renderer::LoadTexture("assets/models/boss/diffuse.png");
+    bossTextureID = Renderer::LoadTexture("assets/textures/leukocyte_corrupto_tex.png");
+    if (bossTextureID == 0)
+    {
+        std::cerr << "Falha ao carregar textura leukocyte_corrupto_tex.png!" << std::endl;
+    }
 
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;
     std::string warn, err;
 
-    bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, "assets/models/boss/cyberVir.obj", "assets/models/boss/");
+    bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, "assets/models/leukocyte_corrupto.obj", "assets/models/");
     if (!err.empty())
         std::cerr << "ERR Boss: " << err << std::endl;
     if (!ret)
     {
-        std::cerr << "Falha ao carregar modelo cyberVir.obj!" << std::endl;
+        std::cerr << "Falha ao carregar modelo leukocyte_corrupto.obj!" << std::endl;
         return;
     }
 
@@ -1421,13 +1420,13 @@ void PneumococoGigante::TomarDano(float dano)
 }
 void PneumococoGigante::InicializarModelo()
 {
-    pneuTextureID = Renderer::LoadTexture("assets/textures/boss_fase2_tex.png");
+    pneuTextureID = Renderer::LoadTexture("assets/textures/pneumococo_gigante_tex.png");
     
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;
     std::string warn, err;
-    if (tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, "assets/models/boss_fase2.obj", "assets/models/"))
+    if (tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, "assets/models/pneumococo_gigante.obj", "assets/models/"))
     {
         float minX = 9999, maxX = -9999;
         float minY = 9999, maxY = -9999;
@@ -1513,7 +1512,605 @@ void PneumococoGigante::InicializarModelo()
     }
     else
     {
-        std::cout << "Aviso: Falha ao carregar boss_fase2.obj" << std::endl;
+        std::cout << "Aviso: Falha ao carregar pneumococo_gigante.obj" << std::endl;
         pneuCarregado = false;
+    }
+}
+
+// --------------------------------------------------------------------------------------
+// FASE 3: PRÍON MIMÉTICO
+// --------------------------------------------------------------------------------------
+std::vector<Vertex> PrionMimetico::prionVertices;
+GLuint PrionMimetico::prionTextureID = 0;
+GLuint PrionMimetico::prionDisplayListID = 0;
+bool PrionMimetico::prionCarregado = false;
+
+PrionMimetico::PrionMimetico(float startX, float startY, float startZ)
+    : Inimigo(startX, startY, startZ, 0)
+{
+    health = 30.0f;
+    raioColisao = 20.0f;
+    comprimentoZ = 20.0f;
+    maxBufferSize = 90; // 1.5 seconds at 60 FPS
+    attackTimer = 0.0f;
+    anguloGiro = 0.0f;
+}
+
+void PrionMimetico::Atualizar(float dt, const Player& player)
+{
+    anguloGiro += 60.0f * dt; // Rotação lenta
+    
+    // Grava a posicao atual do jogador
+    posHistory.push_back({player.GetX(), player.GetZ()});
+    
+    // Diminui o delay se a vida cair
+    if (health < 15.0f) {
+        maxBufferSize = 48; // 0.8 seconds at 60 FPS
+    }
+    
+    // Trava o Z permanentemente na frente da camera, mesmo antes do buffer encher
+    posZ = player.GetZ() - 400.0f; 
+
+    // Puxa a posicao atrasada
+    if (posHistory.size() > (size_t)maxBufferSize) {
+        auto oldPos = posHistory.front();
+        posHistory.pop_front();
+        
+        // Copia a posicao X do passado
+        posX = oldPos.first;
+        
+        // posY copia do player
+        posY = player.GetY();
+    }
+    
+    // Polaridade oposta
+    polarity = 1 - player.GetPolarity();
+    
+    // Ataque
+    attackTimer += dt;
+    if (attackTimer >= 1.0f) {
+        attackTimer = 0.0f;
+        extern std::vector<EnemyProjectile> enemyLasers;
+        // Atira em direcao ao jogador
+        float dx = player.GetX() - posX;
+        float dz = player.GetZ() - posZ;
+        float mag = std::sqrt(dx*dx + dz*dz);
+        if (mag > 0.1f) {
+            dx /= mag;
+            dz /= mag;
+        }
+        float speed = 150.0f;
+        enemyLasers.push_back(EnemyProjectile(posX, posY, posZ, dx, 0.0f, dz, speed, polarity));
+    }
+}
+
+void PrionMimetico::Desenhar()
+{
+    glPushMatrix();
+    glTranslatef(posX, posY, posZ);
+    
+    glPushMatrix(); // Matrix para o modelo (isolando rotação)
+    // Vira pra frente do player (na verdade, vira no sentido -Z)
+    glRotatef(180.0f, 0, 1, 0);
+    // Rolagem longitudinal lenta sobre o eixo X (pião horizontal)
+    glRotatef(anguloGiro, 1.0f, 0.0f, 0.0f);
+
+    if (prionCarregado) {
+        // Desligamos a luz e a textura para forçar geometria pura de Neon
+        glDisable(GL_LIGHTING);
+        glDisable(GL_TEXTURE_2D);
+        
+        // Aplica tom de cor puro baseado na polaridade (Cores Escuras/Sombrias)
+        if (polarity == 0) glColor3f(0.0f, 0.2f, 0.6f); // Azul-Marinho Escuro
+        else glColor3f(0.6f, 0.0f, 0.0f); // Vermelho Sangue
+        
+        glCallList(prionDisplayListID);
+        
+        // Restaura
+        glEnable(GL_TEXTURE_2D);
+        glEnable(GL_LIGHTING);
+    } else {
+        if (polarity == 0) glColor3f(0.0f, 0.0f, 1.0f);
+        else glColor3f(1.0f, 0.0f, 0.0f);
+        glutSolidSphere(20.0f, 16, 16);
+    }
+    glPopMatrix(); // Fim da matrix do modelo
+    
+    extern bool showCollisionBoxes;
+    if (showCollisionBoxes)
+    {
+        glDisable(GL_LIGHTING);
+        glDisable(GL_TEXTURE_2D);
+        glDisable(GL_BLEND);
+        glColor3f(1.0f, 1.0f, 0.0f); // Amarelo
+        glLineWidth(2.0f);
+        glutWireSphere(raioColisao, 16, 16); 
+        glLineWidth(1.0f);
+    }
+    glPopMatrix(); // Fim da matrix de translação
+}
+
+void PrionMimetico::Destruir() { ativo = false; }
+
+void PrionMimetico::InicializarModelo()
+{
+    if (prionCarregado) return;
+    
+    prionTextureID = Renderer::LoadTexture("assets/textures/prion.png");
+    
+    tinyobj::attrib_t attrib;
+    std::vector<tinyobj::shape_t> shapes;
+    std::vector<tinyobj::material_t> materials;
+    std::string warn, err;
+    
+    if (tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, "assets/models/prion.obj")) {
+        float minX = 1e9, maxX = -1e9, minY = 1e9, maxY = -1e9, minZ = 1e9, maxZ = -1e9;
+        for (const auto& shape : shapes) {
+            for (const auto& index : shape.mesh.indices) {
+                Vertex v;
+                v.x = attrib.vertices[3 * index.vertex_index + 0];
+                v.y = attrib.vertices[3 * index.vertex_index + 1];
+                v.z = attrib.vertices[3 * index.vertex_index + 2];
+                if (index.normal_index >= 0) {
+                    v.nx = attrib.normals[3 * index.normal_index + 0];
+                    v.ny = attrib.normals[3 * index.normal_index + 1];
+                    v.nz = attrib.normals[3 * index.normal_index + 2];
+                }
+                if (index.texcoord_index >= 0) {
+                    v.u = attrib.texcoords[2 * index.texcoord_index + 0];
+                    v.v = attrib.texcoords[2 * index.texcoord_index + 1];
+                }
+                prionVertices.push_back(v);
+                
+                if (v.x < minX) minX = v.x;
+                if (v.x > maxX) maxX = v.x;
+                if (v.y < minY) minY = v.y;
+                if (v.y > maxY) maxY = v.y;
+                if (v.z < minZ) minZ = v.z;
+                if (v.z > maxZ) maxZ = v.z;
+            }
+        }
+        float scale = 40.0f / (maxX - minX + 0.1f);
+        float cx = (maxX + minX) / 2.0f;
+        float cy = (maxY + minY) / 2.0f;
+        float cz = (maxZ + minZ) / 2.0f;
+        
+        prionDisplayListID = glGenLists(1);
+        glNewList(prionDisplayListID, GL_COMPILE);
+        glBegin(GL_TRIANGLES);
+        for (auto& v : prionVertices) {
+            v.x = (v.x - cx) * scale;
+            v.y = (v.y - cy) * scale;
+            v.z = (v.z - cz) * scale;
+            glNormal3f(v.nx, v.ny, v.nz);
+            glTexCoord2f(v.u, v.v);
+            glVertex3f(v.x, v.y, v.z);
+        }
+        glEnd();
+        glEndList();
+        prionCarregado = true;
+    }
+}
+
+// ==============================================================================
+// VÍRUS DELTA (Hacker Bipolar - Espelho)
+// ==============================================================================
+std::vector<Vertex> VirusDelta::deltaVertices;
+GLuint VirusDelta::deltaTextureID = 0;
+GLuint VirusDelta::deltaDisplayListID = 0;
+bool VirusDelta::deltaCarregado = false;
+
+VirusDelta::VirusDelta(float startY, float startZ, int pol) : Inimigo(0.0f, startY, startZ, pol)
+{
+    health = 20.0f;
+    raioColisao = 25.0f;
+    velZ = 100.0f;
+    velX = 0.0f;
+    comprimentoZ = 20.0f;
+    attackTimer = 0.0f;
+    anguloGiro = 0.0f;
+}
+
+void VirusDelta::Atualizar(float dt, const Player& player)
+{
+    // Espelha o X do jogador (invertido)
+    posX = -player.GetX();
+    
+    // Y do jogador
+    posY = player.GetY();
+    
+    // Z se aproxima normalmente
+    posZ += velZ * dt;
+    
+    // Giro agressivo no eixo Z
+    anguloGiro += 300.0f * dt;
+    
+    // Ataque
+    attackTimer += dt;
+    if (attackTimer >= 1.5f) {
+        attackTimer = 0.0f;
+        extern std::vector<EnemyProjectile> enemyLasers;
+        
+        // Atira em cruz ou spread
+        float speed = 180.0f;
+        // Tiro central em direção à tela
+        enemyLasers.push_back(EnemyProjectile(posX, posY, posZ + 20.0f, 0.0f, 0.0f, 1.0f, speed, polarity));
+        // Tiros diagonais
+        enemyLasers.push_back(EnemyProjectile(posX, posY, posZ + 20.0f, 0.5f, 0.0f, 0.866f, speed, polarity));
+        enemyLasers.push_back(EnemyProjectile(posX, posY, posZ + 20.0f, -0.5f, 0.0f, 0.866f, speed, polarity));
+    }
+}
+
+void VirusDelta::Desenhar()
+{
+    glPushMatrix();
+    glTranslatef(posX, posY, posZ);
+    
+    glPushMatrix(); // Matrix para o modelo
+    // Gira no eixo Z (como um shuriken/helicóptero)
+    glRotatef(anguloGiro, 0.0f, 0.0f, 1.0f);
+
+    if (deltaCarregado) {
+        // Neon sombrio idêntico ao Príon Mimético
+        glDisable(GL_LIGHTING);
+        glDisable(GL_TEXTURE_2D);
+        
+        if (polarity == 0) glColor3f(0.0f, 0.2f, 0.6f); // Azul-Marinho
+        else glColor3f(0.6f, 0.0f, 0.0f); // Vermelho Sangue
+        
+        glCallList(deltaDisplayListID);
+        
+        glEnable(GL_TEXTURE_2D);
+        glEnable(GL_LIGHTING);
+    } else {
+        if (polarity == 0) glColor3f(0.0f, 0.0f, 1.0f);
+        else glColor3f(1.0f, 0.0f, 0.0f);
+        glutSolidCube(20.0f);
+    }
+    glPopMatrix(); // Fim da matrix do modelo
+    
+    extern bool showCollisionBoxes;
+    if (showCollisionBoxes)
+    {
+        glDisable(GL_LIGHTING);
+        glDisable(GL_TEXTURE_2D);
+        glDisable(GL_BLEND);
+        glColor3f(1.0f, 1.0f, 0.0f); // Amarelo
+        glLineWidth(2.0f);
+        glutWireSphere(raioColisao, 16, 16); 
+        glLineWidth(1.0f);
+    }
+    glPopMatrix(); // Fim da matrix de translação
+}
+
+void VirusDelta::Destruir() { ativo = false; }
+
+void VirusDelta::InicializarModelo()
+{
+    if (deltaCarregado) return;
+    
+    deltaTextureID = Renderer::LoadTexture("assets/textures/delta.png");
+    
+    tinyobj::attrib_t attrib;
+    std::vector<tinyobj::shape_t> shapes;
+    std::vector<tinyobj::material_t> materials;
+    std::string warn, err;
+    
+    if (tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, "assets/models/delta.obj")) {
+        float minX = 1e9, maxX = -1e9, minY = 1e9, maxY = -1e9, minZ = 1e9, maxZ = -1e9;
+        for (const auto& shape : shapes) {
+            for (const auto& index : shape.mesh.indices) {
+                Vertex v;
+                v.x = attrib.vertices[3 * index.vertex_index + 0];
+                v.y = attrib.vertices[3 * index.vertex_index + 1];
+                v.z = attrib.vertices[3 * index.vertex_index + 2];
+                if (index.normal_index >= 0) {
+                    v.nx = attrib.normals[3 * index.normal_index + 0];
+                    v.ny = attrib.normals[3 * index.normal_index + 1];
+                    v.nz = attrib.normals[3 * index.normal_index + 2];
+                } else {
+                    v.nx = 0.0f; v.ny = 1.0f; v.nz = 0.0f;
+                }
+                if (index.texcoord_index >= 0) {
+                    v.u = attrib.texcoords[2 * index.texcoord_index + 0];
+                    v.v = attrib.texcoords[2 * index.texcoord_index + 1];
+                } else {
+                    v.u = 0.0f; v.v = 0.0f;
+                }
+                deltaVertices.push_back(v);
+                
+                if (v.x < minX) minX = v.x;
+                if (v.x > maxX) maxX = v.x;
+                if (v.y < minY) minY = v.y;
+                if (v.y > maxY) maxY = v.y;
+                if (v.z < minZ) minZ = v.z;
+                if (v.z > maxZ) maxZ = v.z;
+            }
+        }
+        float scale = 40.0f / (maxX - minX + 0.1f);
+        float cx = (maxX + minX) / 2.0f;
+        float cy = (maxY + minY) / 2.0f;
+        float cz = (maxZ + minZ) / 2.0f;
+        
+        deltaDisplayListID = glGenLists(1);
+        glNewList(deltaDisplayListID, GL_COMPILE);
+        glBegin(GL_TRIANGLES);
+        for (auto& v : deltaVertices) {
+            v.x = (v.x - cx) * scale;
+            v.y = (v.y - cy) * scale;
+            v.z = (v.z - cz) * scale;
+            glNormal3f(v.nx, v.ny, v.nz);
+            glTexCoord2f(v.u, v.v);
+            glVertex3f(v.x, v.y, v.z);
+        }
+        glEnd();
+        glEndList();
+        deltaCarregado = true;
+    }
+}
+
+// ==============================================================================
+// BOSS 3: NEXUS OMEGA
+// ==============================================================================
+std::vector<Vertex> NexusOmega::nexusVertices;
+GLuint NexusOmega::nexusTextureID = 0;
+GLuint NexusOmega::nexusDisplayListID = 0;
+bool NexusOmega::nexusCarregado = false;
+
+NexusOmega::NexusOmega(float x, float y, float z) : Inimigo(x, y, z, 1)
+{
+    maxHealth = 6000.0f; // Buff massivo: de 1200 para 6000!
+    health = maxHealth;
+    raioColisao = 40.0f; // Hitbox reduzida, exigindo precisão no núcleo
+    velZ = 0.0f;
+    velX = 0.0f;
+    comprimentoZ = 80.0f;
+    attackTimer = 0.0f;
+    attackAngle = 0.0f;
+    moveAngle = 0.0f;
+}
+
+void NexusOmega::Atualizar(float dt, const Player& player)
+{
+    // Movimentação em Oito (Lissajous curve) majestosa e fluida
+    moveAngle += 40.0f * dt;
+    float rad = moveAngle * 3.14159f / 180.0f;
+    
+    // Determina o estágio atual
+    int estagio = 1;
+    if (health <= 4000.0f && health > 1500.0f) estagio = 2;
+    else if (health <= 1500.0f) estagio = 3;
+
+    // Lógica de Movimentação baseada no Estágio
+    if (estagio == 1) {
+        posX = std::sin(rad) * 150.0f;
+    } else if (estagio == 2) {
+        // Oito mais rápido e começa a seguir levemente o player
+        moveAngle += 20.0f * dt;
+        posX = std::sin(rad) * 200.0f;
+        posX += (player.GetX() - posX) * 0.5f * dt; // Segue lentamente
+    } else {
+        // Estágio 3: Fúria! Segue agressivamente o player no eixo X
+        moveAngle += 40.0f * dt;
+        posX += (player.GetX() - posX) * 1.5f * dt;
+    }
+    
+    extern int cameraMode;
+    float baseZ = 400.0f;
+    if (cameraMode != 3) baseZ *= 2.0f;
+    
+    // Z oscila levemente, mas fica mais próximo no estágio 3
+    float zOscillation = std::cos(rad * 0.5f) * (estagio == 3 ? 100.0f : 50.0f);
+    posZ = player.GetZ() - baseZ + zOscillation;
+
+    // Bullet-Hell Extremo (Fase Final)
+    attackTimer -= dt;
+    attackAngle += (60.0f + estagio * 40.0f) * dt; // Rotação dos lasers fica insana
+
+    if (attackTimer <= 0.0f) {
+        extern std::vector<EnemyProjectile> enemyLasers;
+        
+        if (estagio == 1) {
+            attackTimer = 0.5f; // Cadência aumentada
+            // Estrela de 5 pontas dupla rápida
+            for (int i = 0; i < 5; i++) {
+                float a1 = (attackAngle + i * 72.0f) * 3.14159f / 180.0f;
+                float a2 = (attackAngle + i * 72.0f + 36.0f) * 3.14159f / 180.0f;
+                enemyLasers.push_back(EnemyProjectile(posX, posY, posZ, std::sin(a1), 0.0f, std::cos(a1), 300.0f, 0)); // Azul
+                enemyLasers.push_back(EnemyProjectile(posX, posY, posZ, std::sin(a2), 0.0f, std::cos(a2), 300.0f, 1)); // Vermelho
+            }
+        } 
+        else if (estagio == 2) {
+            attackTimer = 0.8f; 
+            // Paredes Intercaladas de Lasers
+            int pol = (int(attackAngle) / 90) % 2 == 0 ? 0 : 1; // Alterna a polaridade
+            for (int i = -4; i <= 4; i++) {
+                // Dispara uma linha reta formando uma parede
+                float dx = i * 0.2f;
+                enemyLasers.push_back(EnemyProjectile(posX + i * 20.0f, posY, posZ + 20.0f, dx, 0.0f, 1.0f, 350.0f, pol));
+            }
+        } 
+        else if (estagio == 3) {
+            attackTimer = 0.1f; // Metralhadora absurda!
+            
+            // Dupla Espiral
+            float a3 = attackAngle * 2.0f * 3.14159f / 180.0f;
+            float a4 = (attackAngle * 2.0f + 180.0f) * 3.14159f / 180.0f;
+            enemyLasers.push_back(EnemyProjectile(posX, posY, posZ, std::sin(a3), 0.0f, std::cos(a3), 400.0f, 1));
+            enemyLasers.push_back(EnemyProjectile(posX, posY, posZ, std::sin(a4), 0.0f, std::cos(a4), 400.0f, 0));
+            
+            // Ocasionalmente solta tiros focados rápidos
+            if (rand() % 10 == 0) {
+                float px = player.GetX() - posX;
+                float pz = player.GetZ() - posZ;
+                float mag = std::sqrt(px*px + pz*pz);
+                if (mag > 0.1f) { px /= mag; pz /= mag; }
+                enemyLasers.push_back(EnemyProjectile(posX, posY, posZ, px, 0.0f, pz, 600.0f, rand()%2));
+            }
+        }
+    }
+}
+
+void NexusOmega::Desenhar()
+{
+    glPushMatrix();
+    glTranslatef(posX, posY, posZ);
+    
+    glPushMatrix(); // Matrix para o modelo
+    // Gira lentamente em torno de si mesmo
+    glRotatef(moveAngle * 0.5f, 0, 1, 0);
+    glRotatef(std::sin(moveAngle * 3.14159f / 180.0f) * 15.0f, 1, 0, 0); // Inclinação
+
+    if (nexusCarregado) {
+        glEnable(GL_LIGHTING);
+        glEnable(GL_TEXTURE_2D);
+        glBindTexture(GL_TEXTURE_2D, nexusTextureID);
+        
+        // Material Metálico Especular!
+        GLfloat mat_specular[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+        GLfloat mat_shininess[] = { 100.0f }; // Alto brilho metálico
+        GLfloat mat_ambient_diffuse[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+        
+        glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
+        glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
+        glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, mat_ambient_diffuse);
+        
+        // Assegura que color tracking está desligado para usar o Material
+        glDisable(GL_COLOR_MATERIAL);
+        
+        glCallList(nexusDisplayListID);
+        
+        // Restaura
+        GLfloat zero_spec[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+        GLfloat zero_shine[] = { 0.0f };
+        glMaterialfv(GL_FRONT, GL_SPECULAR, zero_spec);
+        glMaterialfv(GL_FRONT, GL_SHININESS, zero_shine);
+        glEnable(GL_COLOR_MATERIAL);
+    } else {
+        glColor3f(0.5f, 0.5f, 0.5f);
+        glutSolidCube(40.0f);
+    }
+    glPopMatrix(); // fim model matrix
+    
+    extern bool showCollisionBoxes;
+    if (showCollisionBoxes)
+    {
+        glDisable(GL_LIGHTING);
+        glDisable(GL_TEXTURE_2D);
+        glDisable(GL_BLEND);
+        glColor3f(1.0f, 1.0f, 0.0f); // Amarelo
+        glLineWidth(2.0f);
+        glutWireSphere(raioColisao, 16, 16); 
+        glLineWidth(1.0f);
+    }
+    glPopMatrix(); // fim translation matrix
+    
+    // Barra de Vida do Boss
+    extern bool showCollisionBoxes;
+    if (!showCollisionBoxes) {
+        glPushMatrix();
+        glTranslatef(posX, posY + 60.0f, posZ); // Acima do Boss
+        
+        glDisable(GL_LIGHTING);
+        glDisable(GL_TEXTURE_2D);
+        
+        // Fundo vermelho escuro
+        glColor3f(0.3f, 0.0f, 0.0f);
+        glBegin(GL_QUADS);
+        glVertex3f(-50.0f, -5.0f, 0.0f);
+        glVertex3f(50.0f, -5.0f, 0.0f);
+        glVertex3f(50.0f, 5.0f, 0.0f);
+        glVertex3f(-50.0f, 5.0f, 0.0f);
+        glEnd();
+        
+        // Barra vermelha clara proporcional à vida
+        float width = (health / maxHealth) * 100.0f; // total width is 100
+        glColor3f(1.0f, 0.2f, 0.2f);
+        glBegin(GL_QUADS);
+        glVertex3f(-50.0f, -5.0f, 0.1f);
+        glVertex3f(-50.0f + width, -5.0f, 0.1f);
+        glVertex3f(-50.0f + width, 5.0f, 0.1f);
+        glVertex3f(-50.0f, 5.0f, 0.1f);
+        glEnd();
+        
+        glEnable(GL_TEXTURE_2D);
+        glEnable(GL_LIGHTING);
+        glPopMatrix();
+    }
+}
+
+void NexusOmega::Destruir() { ativo = false; }
+
+void NexusOmega::TomarDano(float dano)
+{
+    health -= dano;
+    if (health <= 0)
+    {
+        health = 0;
+        Destruir();
+    }
+}
+
+void NexusOmega::InicializarModelo()
+{
+    if (nexusCarregado) return;
+    
+    nexusTextureID = Renderer::LoadTexture("assets/textures/nexus.png");
+    
+    tinyobj::attrib_t attrib;
+    std::vector<tinyobj::shape_t> shapes;
+    std::vector<tinyobj::material_t> materials;
+    std::string warn, err;
+    
+    if (tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, "assets/models/nexus.obj")) {
+        float minX = 1e9, maxX = -1e9, minY = 1e9, maxY = -1e9, minZ = 1e9, maxZ = -1e9;
+        for (const auto& shape : shapes) {
+            for (const auto& index : shape.mesh.indices) {
+                Vertex v;
+                v.x = attrib.vertices[3 * index.vertex_index + 0];
+                v.y = attrib.vertices[3 * index.vertex_index + 1];
+                v.z = attrib.vertices[3 * index.vertex_index + 2];
+                if (index.normal_index >= 0) {
+                    v.nx = attrib.normals[3 * index.normal_index + 0];
+                    v.ny = attrib.normals[3 * index.normal_index + 1];
+                    v.nz = attrib.normals[3 * index.normal_index + 2];
+                } else {
+                    v.nx = 0.0f; v.ny = 1.0f; v.nz = 0.0f;
+                }
+                if (index.texcoord_index >= 0) {
+                    v.u = attrib.texcoords[2 * index.texcoord_index + 0];
+                    v.v = attrib.texcoords[2 * index.texcoord_index + 1];
+                } else {
+                    v.u = 0.0f; v.v = 0.0f;
+                }
+                nexusVertices.push_back(v);
+                
+                if (v.x < minX) minX = v.x;
+                if (v.x > maxX) maxX = v.x;
+                if (v.y < minY) minY = v.y;
+                if (v.y > maxY) maxY = v.y;
+                if (v.z < minZ) minZ = v.z;
+                if (v.z > maxZ) maxZ = v.z;
+            }
+        }
+        float scale = 60.0f / (maxX - minX + 0.1f);
+        float cx = (maxX + minX) / 2.0f;
+        float cy = (maxY + minY) / 2.0f;
+        float cz = (maxZ + minZ) / 2.0f;
+        
+        nexusDisplayListID = glGenLists(1);
+        glNewList(nexusDisplayListID, GL_COMPILE);
+        glBegin(GL_TRIANGLES);
+        for (auto& v : nexusVertices) {
+            v.x = (v.x - cx) * scale;
+            v.y = (v.y - cy) * scale;
+            v.z = (v.z - cz) * scale;
+            glNormal3f(v.nx, v.ny, v.nz);
+            glTexCoord2f(v.u, v.v);
+            glVertex3f(v.x, v.y, v.z);
+        }
+        glEnd();
+        glEndList();
+        nexusCarregado = true;
     }
 }

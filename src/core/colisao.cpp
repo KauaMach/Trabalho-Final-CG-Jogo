@@ -29,7 +29,7 @@ void Colisao::ChecarLaserInimigo(Player &player, std::vector<Inimigo *> &inimigo
             if (!inimigo || !inimigo->IsAtivo())
                 continue;
 
-            // Assume que o laser tem um raio pequeno de colisão (ex: 5.0f)
+            // Assume que o laser possui um raio de colisão reduzido (ex: 5.0f)
             float distXY = std::sqrt(std::pow(laser.x - inimigo->GetX(), 2) + std::pow(laser.y - inimigo->GetY(), 2));
             float distZ = std::abs(laser.z - inimigo->GetZ());
 
@@ -139,17 +139,17 @@ void Colisao::ChecarColisaoPlayer(Player &player, std::vector<Inimigo *> &inimig
         // Distancia longitudinal (Z)
         float distZ = std::abs(inimigo->GetZ() - player.GetZ());
 
-        // Rebaixando a colisao da nave em 5.0f para centralizar na fuselagem
+        // Deslocamento no eixo Y (offset) para alinhar o volume de colisão à fuselagem
         float offsetY = 4.0f;
 
-        // Distancia transversal (plano X, Y usando pitágoras)
+        // Distância transversal (plano X, Y usando o Teorema de Pitágoras)
         float distXY = std::sqrt(std::pow(inimigo->GetX() - player.GetX(), 2) +
                                  std::pow(inimigo->GetY() - (player.GetY() + offsetY), 2));
 
-        // Para colidir no cilindro, o inimigo tem que invadir a grossura do tubo E o comprimento dele ao mesmo tempo
+        // Interseção Cilíndrica: A invasão deve ocorrer simultaneamente na espessura radial e na extensão longitudinal
         if (distZ < (comprimentoNave + compInimigo) && distXY < (raioNave + raioInimigo))
         {
-            // COLISAO DETECTADA ENTRE NAVE E INIMIGO!
+            // COLISÃO DETECTADA ENTRE NAVE E INIMIGO!
             player.DamageNanocell(inimigo->GetCollisionDamageNanocell());
             float dmgPatient = inimigo->GetCollisionDamagePatient();
             if (dmgPatient > 0.0f) {

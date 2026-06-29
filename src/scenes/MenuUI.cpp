@@ -25,7 +25,6 @@ void MenuUI::Init()
     configTexture = Renderer::LoadTexture("assets/textures/bg-configuracoes.png");
     fasesTexture = Renderer::LoadTexture("assets/textures/bg-fases.png");
     cadeadoTexture = Renderer::LoadTexture("assets/textures/bg-cadeado-fase.png");
-    relatorioTexture = Renderer::LoadTexture("assets/textures/bg-relatorio.png");
     pauseTexture = Renderer::LoadTexture("assets/textures/bg-pause.png");
     vitoriaTexture = Renderer::LoadTexture("assets/textures/bg-vitoria.png");
     derrotaTexture = Renderer::LoadTexture("assets/textures/bg-derrota.png");
@@ -157,13 +156,8 @@ void MenuUI::HandleClick(int mouseX, int realMouseY, GameState &state)
             }
             return;
         }
-        // Botao Relatorio
-        if (mouseX >= 730.0f && mouseX <= 950.0f && realMouseY >= 40.0f && realMouseY <= 120.0f)
-        {
-            audioManager.PlayClickSound();
-            state = STATE_RELATORIO;
-            return;
-        }
+        // Botão Relatório removido
+
 
     }
     else if (state == STATE_PAUSE)
@@ -190,12 +184,6 @@ void MenuUI::HandleClick(int mouseX, int realMouseY, GameState &state)
             state = STATE_SELECAO_FASE;
             return;
         }
-    }
-    else if (state == STATE_RELATORIO)
-    {
-        // Clique em qualquer lugar volta para a selecao de fase
-        audioManager.PlayClickSound();
-        state = STATE_SELECAO_FASE;
     }
     else if (state == STATE_VICTORY)
     {
@@ -336,29 +324,7 @@ void MenuUI::Render(GameState state)
         }
 
     }
-    else if (state == STATE_RELATORIO)
-    {
-        Renderer::DrawTexture(relatorioTexture, 0, 0, 1024, 768);
-
-        // --- TEXTOS FALSOS PARA ESTATISTICAS (Temporario) ---
-        Renderer::DrawText("ESTATISTICAS DO JOGADOR", 180, 560, 0.0f, 1.0f, 0.3f);
-        Renderer::DrawText("STATUS DAS FASES", 550, 560, 0.0f, 1.0f, 0.3f);
-
-        Renderer::DrawText("Pontos Acumulados: 12.500", 180, 480, 1.0f, 1.0f, 1.0f);
-        Renderer::DrawText("Inimigos Destruidos: 342", 180, 430, 1.0f, 1.0f, 1.0f);
-        Renderer::DrawText("Precisao de Tiros: 87%", 180, 380, 1.0f, 1.0f, 1.0f);
-        Renderer::DrawText("Mortes: 3", 180, 330, 1.0f, 1.0f, 1.0f);
-
-        Renderer::DrawText("Corrente Sanguinea: RANK S (Concluido)", 550, 480, 1.0f, 1.0f, 1.0f);
-        Renderer::DrawText("Pulmoes: BLOQUEADO", 550, 430, 0.5f, 0.5f, 0.5f);
-        Renderer::DrawText("Sistema Nervoso: BLOQUEADO", 550, 380, 0.5f, 0.5f, 0.5f);
-
-        // Botao voltar
-        if (hoverX >= 30.0f && hoverX <= 200.0f && hoverY >= 30.0f && hoverY <= 100.0f)
-        {
-            Renderer::DrawSemiTransparentRect(30, 200, 30, 100, 0.0f, 1.0f, 0.3f, 0.15f);
-        }
-    }
+        // Removida aba de relatório
     else if (state == STATE_PAUSE)
     {
         // 1. Escurece o jogo congelado no fundo (Overlay transparente preto mais claro)

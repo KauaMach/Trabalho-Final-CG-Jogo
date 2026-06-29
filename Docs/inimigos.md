@@ -102,6 +102,44 @@ Esta documentação detalha as mecânicas, parâmetros de saúde, inteligência 
 
 ---
 
+## FASE 3: Sistema Nervoso Central
+
+### 7. Príon Mimético
+* **Tipo:** Reflexo / Seguidor (Buffer Circular)
+* **Polaridade:** Oposta à do Jogador (Dinâmica)
+* **Atributos Principais:**
+  * **HP (Vida):** 30.0
+  * **Comportamento Base:** Leitura e espelhamento da posição passada do jogador.
+* **Comportamento e Inteligência (IA):**
+  * Não se move por forças normais físicas. Em vez disso, mantém uma fila (Buffer Circular) com o histórico de posições X e Y exatas que o NANOCELL-1 ocupou no passado.
+  * O Príon se teletransporta fluidamente para o local exato onde o jogador estava há 1.5 a 0.8 segundos atrás (o atraso cai conforme a vida do Príon abaixa).
+  * Como ele é literalmente um fantasma do passado temporal, a melhor estratégia de evasão contra ele é nunca fazer movimentos circulares onde você cruza o próprio rastro.
+* **Ataque:** Dispara projéteis predatórios mirando no jogador.
+
+### 8. Vírus Delta
+* **Tipo:** Hacker Bipolar (Atirador e Espelho)
+* **Polaridade:** Dinâmica (Vermelho/Azul)
+* **Atributos Principais:**
+  * **HP (Vida):** 45.0
+* **Comportamento e Inteligência (IA):**
+  * Reflete a movimentação horizontal (X) do jogador. Se a nave vai para a esquerda, ele desliza para a direita, agindo como um espelho de manobras de desvio.
+* **Ataque:** Lê a cor atual do escudo do jogador e sempre dispara projéteis simultâneos da cor contrária, forçando o jogador a estar pronto para usar a mecânica de Barrel Roll (dash) ou trocar freneticamente de cor.
+
+### 9. Nexus Omega
+* **Tipo:** Boss Final (Formas Múltiplas)
+* **Polaridade:** Dinâmica
+* **Atributos Principais:**
+  * **HP Máximo:** 6000.0 (O Titã Absoluto)
+  * **Raio de Colisão:** 40.0 (Hitbox de núcleo, requer extrema precisão do jogador)
+* **Comportamento e Máquina de Estados (3 Modos):**
+  * O Chefão definitivo do jogo, a máquina viral blindada que reage à iluminação como metal polido.
+  * Dança majestosamente no eixo X formando uma figura em "Oito" que fica mais rápida conforme sofre dano.
+  * **Estágio 1 - Majestoso (Acima de 4000 HP):** Dispara estrelas cadentes duplas ultra-rápidas em 5 pontas rotativas.
+  * **Estágio 2 - Oclusão (Entre 4000 e 1500 HP):** Acelera o passo, persegue o jogador levemente no X, e projeta *Paredes de Lasers Intercaladas*. O jogador precisa dar dash perfeitamente entre as frestas ou alternar a polaridade correndo de um lado pro outro.
+  * **Estágio 3 - Fúria Final (Abaixo de 1500 HP):** Movimentação agressiva rastreando e seguindo o jogador. Libera uma Dupla Espiral Bullet-Hell monstruosa e gigantesca em 360 graus, enquanto atira "Snipes" rápidos focados (teleguiados) na Nanocell aleatoriamente.
+
+---
+
 ## Resumo Comparativo
 
 | Inimigo | Fase | Tipo | Polaridade | HP | Destaque / Ataque Principal |
@@ -112,3 +150,6 @@ Esta documentação detalha as mecânicas, parâmetros de saúde, inteligência 
 | **Vírus Gama** | 2 | Atirador Bipolar | Alternante (3s) | 15.0 | Troca de cor. Tiro teleguiado rápido herdando a cor. |
 | **Esporo Fúngico** | 2 | Kamikaze | Azul | 10.0 | Tracking hostil X/Y. Altíssimo dano explosivo no impacto. |
 | **Pneumococo Gigante** | 2 | BOSS | Dinâmica (Tiros) | 600.0 | Ciclo respiratório em 3 Fases. Bullet-Hell rotativo escalonado. |
+| **Príon Mimético** | 3 | Reflexo Temporal | Oposta (Jogador) | 30.0 | Copia o movimento passado do jogador (Buffer). |
+| **Vírus Delta** | 3 | Espelho Atirador | Dinâmica (Oposta)| 20.0 | Espelha o eixo X e atira na cor inversa. |
+| **Nexus Omega** | 3 | BOSS FINAL | Dinâmica | 6000.0 | 3 Modos (Estrelas, Paredes Lasers, Fúria Espiral). |

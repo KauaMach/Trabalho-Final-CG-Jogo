@@ -1,6 +1,7 @@
 #pragma once
 #include <cmath>
 #include "Player.h" // Traz a struct Vertex e a definicao do Player
+#include <deque>
 
 class Inimigo {
 protected:
@@ -192,3 +193,85 @@ private:
     static GLuint pneuDisplayListID;
     static bool pneuCarregado;
 };
+
+// FASE 3: PRÍON MIMÉTICO (Buffer Circular)
+class PrionMimetico : public Inimigo {
+public:
+    PrionMimetico(float startX, float startY, float startZ);
+    
+    void Atualizar(float dt, const Player& player) override;
+    void Desenhar() override;
+    void Destruir() override;
+
+    float GetCollisionDamageNanocell() const override { return 15.0f; }
+    float GetCollisionDamagePatient() const override { return 0.0f; }
+
+    static void InicializarModelo();
+
+private:
+    std::deque<std::pair<float, float>> posHistory; // x, z
+    int maxBufferSize;
+    
+    float attackTimer;
+    float anguloGiro;
+    
+    static std::vector<Vertex> prionVertices;
+    static GLuint prionTextureID;
+    static GLuint prionDisplayListID;
+    static bool prionCarregado;
+};
+
+// FASE 3: VÍRUS DELTA (Hacker Bipolar)
+class VirusDelta : public Inimigo {
+public:
+    VirusDelta(float startY, float startZ, int pol);
+    
+    void Atualizar(float dt, const Player& player) override;
+    void Desenhar() override;
+    void Destruir() override;
+
+    float GetCollisionDamageNanocell() const override { return 15.0f; }
+    float GetCollisionDamagePatient() const override { return 0.0f; }
+
+    static void InicializarModelo();
+
+private:
+    float attackTimer;
+    float anguloGiro;
+    
+    static std::vector<Vertex> deltaVertices;
+    static GLuint deltaTextureID;
+    static GLuint deltaDisplayListID;
+    static bool deltaCarregado;
+};
+
+// BOSS 3: NEXUS OMEGA
+class NexusOmega : public Inimigo {
+public:
+    NexusOmega(float x, float y, float z);
+    
+    void Atualizar(float dt, const Player& player) override;
+    void Desenhar() override;
+    void Destruir() override;
+    void TomarDano(float dano) override;
+    bool IsBoss() const override { return true; }
+    
+    float GetMaxHealth() const { return maxHealth; }
+    float GetCurrentHealth() const { return health; }
+
+    static void InicializarModelo();
+
+private:
+    float maxHealth;
+    float attackTimer;
+    float attackAngle;
+    float moveAngle;
+    
+    static std::vector<Vertex> nexusVertices;
+    static GLuint nexusTextureID;
+    static GLuint nexusDisplayListID;
+    static bool nexusCarregado;
+};
+
+
+

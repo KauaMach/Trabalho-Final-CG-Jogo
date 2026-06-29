@@ -10,13 +10,15 @@
 extern AudioManager audioManager;
 extern float gameTimer;
 extern int enemiesKilled;
+extern int currentPhase;
 
 Player::Player() : posX(0.0f), posY(0.0f), posZ(0.0f), speed(3.0f), textureID(0), displayListID(0),
-                   isDashing(false), dashTimer(0.0f), dashCooldown(0.0f), rollAngle(0.0f), polarity(0),
+                   isDashing(false), dashTimer(0.0f), dashCooldown(0.0f), rollAngle(0.0f),
                    isRolling(false), rollTimer(0.0f),
+                   isSurgeActive(false), surgeTimer(0.0f), surgePolarity(0), surgeRadius(0.0f),
                    health(100.0f), maxHealth(100.0f), surgeEnergy(0.0f), maxSurge(100.0f),
                    patientHealth(50.0f), maxPatientHealth(100.0f), bossSpawned(false),
-                   score(0), combo(1) {}
+                   polarity(0), score(0), combo(1) {}
 
 void Player::Init()
 {
@@ -75,7 +77,7 @@ bool Player::LoadModel(const std::string &objPath)
         size_t index_offset = 0;
         for (size_t f = 0; f < shapes[s].mesh.num_face_vertices.size(); f++)
         {
-            int fv = shapes[s].mesh.num_face_vertices[f];
+            size_t fv = shapes[s].mesh.num_face_vertices[f];
             for (size_t v = 0; v < fv; v++)
             {
                 tinyobj::index_t idx = shapes[s].mesh.indices[index_offset + v];
@@ -466,7 +468,13 @@ void Player::DrawHUD()
     // ========================================================
     glColor3f(1.0f, 1.0f, 1.0f);
     RenderText2D(30, 40, "NANOCELL-1");
-    RenderText2D(600, 40, "FASE 1 - Corrente Sanguinea");
+    if (currentPhase == 1) {
+        RenderText2D(600, 40, "FASE 1 - Corrente Sanguinea");
+    } else if (currentPhase == 2) {
+        RenderText2D(600, 40, "FASE 2 - Pulmoes");
+    } else if (currentPhase == 3) {
+        RenderText2D(600, 40, "FASE 3 - Sistema Nervoso");
+    }
 
     // ========================================================
     // LINHA 2 (Y = 75) - BARRAS DE VIDA E HSP
@@ -583,10 +591,10 @@ void Player::DrawHUD()
     RenderText2D(945, 108, std::to_string((int)(surgePercent * 100)) + "%");
 
     // ========================================================
-    // LINHA 4 (Y = 135) - SCORE
+    // LINHA 4 (Y = 135) - STATUS EXTRA
     // ========================================================
     glColor3f(0.8f, 0.8f, 0.8f);
-    RenderText2D(30, 140, "SCORE: " + std::to_string(score) + "      COMBO: x" + std::to_string(combo) + "      ABATES: " + std::to_string(enemiesKilled));
+    RenderText2D(30, 140, "ABATES: " + std::to_string(enemiesKilled));
     
     int m = (int)gameTimer / 60;
     int s = (int)gameTimer % 60;

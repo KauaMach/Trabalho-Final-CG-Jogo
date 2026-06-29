@@ -71,6 +71,7 @@ public:
     int GetCombo() const { return combo; }
     
     void TogglePolarity() { polarity = 1 - polarity; }
+    int GetPolarity() const { return polarity; }
     
     float GetX() const { return posX; }
     float GetY() const { return posY; }

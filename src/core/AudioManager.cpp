@@ -95,14 +95,14 @@ void AudioManager::PlayLaserRed(int loops) {
 
 void AudioManager::PlaySurgeBlue(int durationMs) {
     if (surgeBlueSound) {
-        // Toca em loop infinito (-1) ate ser cortado automaticamente apos durationMs
+        // Executa o canal em loop contínuo (-1) com interrupção automática baseada em timer (durationMs)
         Mix_PlayChannelTimed(-1, surgeBlueSound, -1, durationMs);
     }
 }
 
 void AudioManager::PlaySurgeRed(int durationMs) {
     if (laserRedSound) {
-        // Usa o laser vermelho repetido sem parar, mas corta exato aos durationMs
+        // Reutiliza o canal de áudio do laser vermelho com interrupção cronometrada (durationMs)
         Mix_PlayChannelTimed(-1, laserRedSound, -1, durationMs);
     }
 }

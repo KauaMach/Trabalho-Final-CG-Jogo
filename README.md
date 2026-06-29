@@ -21,8 +21,25 @@
 | **Nº de Fases** | 03 Fases: Corrente Sanguínea, Pulmões, Sistema Nervoso |
 --
 
-## Sobre o Jogo
+## 📑 Sumário
+1. [Sobre o Jogo](#sobre-o-jogo)
+2. [História](#2-história)
+3. [Mecânicas Principais](#3-mecânicas-principais)
+4. [Controles](#4-controles)
+5. [Fases e Progressão](#5-fases-e-progressão)
+6. [Inimigos](#6-inimigos)
+7. [Inteligência Artificial](#7-inteligência-artificial)
+8. [Sistema de Pontuação](#8-sistema-de-pontuação)
+9. [HUD e Interface](#9-hud-e-interface)
+10. [Recursos OpenGL Utilizados](#10-recursos-opengl-utilizados)
+11. [Arquitetura do Projeto](#11-arquitetura-do-projeto)
+12. [Dependências e Compilação](#12-dependências-e-compilação)
+13. [Referências e Inspirações](#13-referências-e-inspirações)
+14. [Equipe](#equipe)
 
+---
+
+## 1. Sobre o Jogo
 
 **Imunidade: A Guerra Celular** é um Shoot 'em Up (Shmup) com perspectiva 3D isométrica, ambientado no interior do corpo humano. O jogador controla o **NANOCELL-1**, um nanobô médico injetado na corrente sanguínea para combater uma infecção viral mutante chamada **Nexus-7**. O jogo é desenvolvido em C++17 com OpenGL Fixed-Function Pipeline e freeGLUT.
 
@@ -139,7 +156,7 @@ Para manter a dinâmica ágil e compensar a câmera fixa no eixo X, o jogo utili
 | **Objetivo** | Introduzir o sistema de polaridade e controles básicos |
 | **Ambiente** | Scroll vertical lento. Hemácias 3D passam como obstáculos decorativos. Plasma simulado via blending OpenGL com objetos semi-transparentes. |
 | **Inimigos** | Vírus Alfa (enxame Boids azul) e Bactéria Coco (tanque vermelho lento) |
-| **Mecânica especial** |  |
+| **Mecânica especial** | Introdução ao sistema de Boids e polaridade cromática |
 | **Boss — Leukocyte Corrupto** | 3 estados: patrulha senoidal → ataque em espiral → fúria com projéteis densos em todas as direções |
 | **Gatilho do Boss** | HSP atinge 90% ou 120 segundos de fase decorridos |
 
@@ -209,11 +226,11 @@ Ao final de cada fase é atribuído um ranking de **S** a **D** baseado em:
 | **Vírus Gama** (F2) | Atirador Bipolar (3s) |    20.0    |        2 tiros        |        20 tiros        |
 | **Pneumococo Gigante**  | BOSS F2 (3 Fases Bullet-Hell)|   600.0    |       60 tiros        |       600 tiros        |
 | **Príon Mimético** (F3) | Copia sua posição       |    30.0    |        3 tiros        |        30 tiros        |
-| **Vírus Delta** (3)| Atira e reflete danos   |    45.0    |      4 a 5 tiros      |        45 tiros        |
+| **Vírus Delta** (F3) | Atira e reflete danos   |    45.0    |      4 a 5 tiros      |        45 tiros        |
 | **Nexus Omega** (F3)   | BOSS FINAL (Fase 3)     |   1200.0   | 120 tiros (Use SURGE!)| Impossível sem a cor certa |
 
 **Análise do Design:**
-- A **Bactéria Coco** tem 40 de HP justamente porque e um "Tanque" de resistência, obrigando o jogador a ficar atirando nela por alguns segundos.
+- A **Bactéria Coco** tem 40 de HP justamente porque é um "Tanque" de resistência, obrigando o jogador a ficar atirando nela por alguns segundos.
 - O **Esporo Fúngico** tem vida quase nula (10 de HP), pois como ele é um "Kamikaze" que se joga contra você muito rápido, o jogador precisa conseguir matá-lo em um milissegundo de reação.
 - O **Nexus Omega (Final Boss)** tem tanta vida que obrigará o jogador a usar o medidor de **SURGE (Especial)** várias vezes durante a luta para conseguir vencer.
 
