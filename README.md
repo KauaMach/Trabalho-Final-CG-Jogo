@@ -1,34 +1,49 @@
-# 🦠 IMUNIDADE: A Guerra Celular
 
-> **Trabalho Final — Computação Gráfica (DC/CCN032 · 2026.1)**  
-> Universidade Federal do Piauí — Prof. Dr. Laurindo de Sousa Britto Neto  
+# 🦠 IMUNIDADE: A Guerra Celular
+### Game Design Document — v1.0
+
+> **Trabalho Final — Computação Gráfica (DC/CCN032 · 2026.1)**
+> Universidade Federal do Piauí — Prof. Dr. Laurindo de Sousa Britto Neto
 > Gênero: Shoot 'em Up (Shmup) 3D · Jogabilidade 2D · OpenGL + freeGLUT
 
 ---
+| Campo | Detalhe |
+|---|---|
+| **Título** | Imunidade: A Guerra Celular |
+| **Gênero** | Shoot 'em Up · Top-Down · Bullet Hell Tático |
+| **Perspectiva** | 3D com Projeção Ortográfica Isométrica |
+| **Plataformas** | Linux, macOS, Windows |
+| **Motor / API** | OpenGL (Fixed-Function Pipeline) via freeGLUT |
+| **Linguagem** | C++17 |
+| **Áudio** | SDL2 + SDL2_mixer |
+| **Resolução** | 1024 × 768 px (janela redimensionável) |
+| **Framerate alvo** | 60 FPS — timer `glutTimerFunc` de 16 ms |
+| **Nº de Fases** | 03 Fases: Corrente Sanguínea, Pulmões, Sistema Nervoso |
+--
 
-## 📖 Sumário
-
+## 📑 Sumário
 1. [Sobre o Jogo](#sobre-o-jogo)
-2. [História](#história)
-3. [Mecânicas Principais](#mecânicas-principais)
-4. [Controles](#controles)
-5. [Fases e Progressão](#fases-e-progressão)
-6. [Inimigos](#inimigos)
-7. [Inteligência Artificial](#inteligência-artificial)
-8. [Sistema de Pontuação](#sistema-de-pontuação)
-9. [HUD e Interface](#hud-e-interface)
-10. [Recursos OpenGL Utilizados](#recursos-opengl-utilizados)
-11. [Arquitetura do Projeto](#arquitetura-do-projeto)
-12. [Dependências e Compilação](#dependências-e-compilação)
-13. [Referências e Inspirações](#referências-e-inspirações)
+2. [História](#2-história)
+3. [Mecânicas Principais](#3-mecânicas-principais)
+4. [Controles](#4-controles)
+5. [Fases e Progressão](#5-fases-e-progressão)
+6. [Inimigos](#6-inimigos)
+7. [Inteligência Artificial](#7-inteligência-artificial)
+8. [HUD e Interface](#8-hud-e-interface)
+9. [Recursos OpenGL Utilizados](#9-recursos-opengl-utilizados)
+10. [Arquitetura do Projeto](#10-arquitetura-do-projeto)
+11. [Dependências e Compilação](#11-dependências-e-compilação)
+12. [Referências e Inspirações](#12-referências-e-inspirações)
 
 ---
 
-## Sobre o Jogo
+## 1. Sobre o Jogo
 
-**Imunidade: A Guerra Celular** é um *shoot 'em up* com scroll vertical/horizontal que se passa **dentro do corpo humano**. Em vez do espaço sideral clássico dos jogos que o inspiraram — Space Invaders, Galaga, Xenon II e Ikaruga — o campo de batalha são os sistemas biológicos de um paciente infectado por um vírus mutante.
+**Imunidade: A Guerra Celular** é um Shoot 'em Up (Shmup) com perspectiva 3D isométrica, ambientado no interior do corpo humano. O jogador controla o **NANOCELL-1**, um nanobô médico injetado na corrente sanguínea para combater uma infecção viral mutante chamada **Nexus-7**. O jogo é desenvolvido em C++17 com OpenGL Fixed-Function Pipeline e freeGLUT.
 
-O jogador controla o **NANOCELL-1**, um nanobô médico injetado como último recurso. O objetivo é eliminar os agentes patogênicos, manter a **Saúde do Paciente** acima de zero e, ao final, destruir o núcleo do vírus NEXUS-7.
+A jogabilidade se passa em 2D dentro de um cenário 3D renderizado em projeção ortográfica. O diferencial criativo é o **sistema de polaridade cromática**, inspirado no clássico Ikaruga: o nanobô alterna entre dois estados (Azul e Vermelho), absorvendo tiros da mesma cor e sofrendo dano dos da cor oposta. Isso cria decisões táticas contínuas e uma curva de aprendizado orgânica.
+
+> **Proposta central:** Um shmup biológico acessível, com mecânica de polaridade como elemento tático central, 3 fases temáticas com ambientação orgânica renderizada em OpenGL, sistema de Boids para IA de enxame e progressão por Saúde do Paciente.
 
 ### Destaques do Projeto
 
@@ -38,163 +53,200 @@ O jogador controla o **NANOCELL-1**, um nanobô médico injetado como último re
 | **IA** | Comportamento de enxame via algoritmo de Boids |
 | **Progressão** | Medidor de Saúde do Paciente como gatilho de boss |
 | **Gráficos** | OpenGL 3D com jogabilidade 2D, Gouraud shading, texturas e blending |
-| **Fases** | 5 ambientes biológicos distintos + 5 bosses temáticos |
+| **Fases** | 3 ambientes biológicos distintos + 3 bosses temáticos |
 
 ---
 
-## História
+## 2. História
 
-O **Paciente Zero** — um cientista de 34 anos — foi infectado por uma cepa sintética criada pelo grupo biohacker **Entropia Corp**: o vírus **NEXUS-7**, uma entidade semi-consciente capaz de aprender, evoluir e coordenar ataques em enxame.
+### 2.1 Contexto
 
-Com o sistema imunológico em colapso, o único recurso restante é o **Protocolo Ícaro**: injetar um nanobô experimental de 800nm diretamente na corrente sanguínea. O jogador assume o controle desse nanobô numa batalha microscópica pela sobrevivência do hospedeiro.
+O **Paciente Zero** — um cientista de 34 anos — foi infectado pela cepa **Nexus-7**, um vírus sintético criado pelo grupo biohacker *Entropia Corp*. O vírus é semi-inteligente: aprende padrões, evolui e coordena ataques celulares em enxame. O sistema imunológico entra em colapso.
 
-### Arco Narrativo
+Em última instância, é iniciado o **Protocolo Ícaro**: injetar o NANOCELL-1 — nanobô experimental de 800 nm — diretamente na corrente sanguínea. O jogador assume seu controle em uma batalha microscópica pela sobrevivência do hospedeiro.
 
-```
-Fase 1 — Corrente Sanguínea   → Primeiro contato. NANOCELL-1 aprende o ambiente.
-Fase 2 — Barreira Pulmonar    → O vírus invade os alvéolos. O cenário respira.
-Fase 3 — Nódulo Linfático     → Aliados e traidores. Linfócitos corrompidos enganam.
-Fase 4 — Sistema Nervoso      → Sinapses invertem controles. Inimigos imitam o jogador.
-Fase 5 — Núcleo Viral         → Arena final. Destruir o NEXUS-7 Omega e curar o paciente.
-```
+### 2.2 Arco Narrativo por Fase
 
----
-
-## Mecânicas Principais
-
-### 1. Sistema de Polaridade Cromática
-
-A mecânica central do jogo. O NANOCELL-1 opera em duas polaridades que alteram ataque, defesa e vulnerabilidade simultaneamente.
-
-```
-POLARIDADE AZUL (Criocinética)          POLARIDADE VERMELHA (Térmica)
-────────────────────────────────        ─────────────────────────────────
-✔  Absorve projéteis AZUIS             ✔  Absorve projéteis VERMELHOS
-✔  Disparo: raio contínuo frio         ✔  Disparo: pulso explosivo em área
-✔  Aplica slow em inimigos atingidos   ✔  Dano em área ao impacto
-✘  Vulnerável a projéteis VERMELHOS    ✘  Vulnerável a projéteis AZUIS
-```
-
-**Regra crítica:** projéteis da cor correta são **absorvidos** (sem dano) e carregam o medidor SURGE. Projéteis da cor errada causam dano total.
-
-### 2. Ataque SURGE
-
-Carregado absorvendo projéteis inimigos da mesma polaridade. Ao atingir 100%, libera um super-ataque devastador:
-
-- **Blizzard SURGE** (Azul): congela toda a tela por 3 segundos com dano contínuo.
-- **Inferno SURGE** (Vermelho): explosão radial que destrói todos os projéteis ativos na tela.
-
-### 3. Medidor de Saúde do Paciente (HSP)
-
-Funciona como medidor de progressão da fase, não apenas como penalidade:
-
-```
-+2%  → matar inimigo comum
-+5%  → matar inimigo elite
-+15% → derrotar boss
--3%  → inimigo atravessa a tela sem ser eliminado
--1%  → NANOCELL-1 recebe qualquer dano
-```
-
-> **HSP = 100%** → Boss da fase é liberado imediatamente.  
-> **HSP = 0%**   → Game Over. A fase reinicia do início.
-
-### 4. Power-ups Orgânicos
-
-| Power-up | Efeito |
+| Fase | Evento Narrativo |
 |---|---|
-| 💊 Anticorpo IgG | +30% dano por 10 segundos |
-| 🧬 Fragmento de RNA | +1 bomba de área |
-| ⚡ Mitocôndria | Velocidade +50% por 8 segundos |
-| 🛡️ Linfócito T | Escudo temporário (3 hits) |
-| 🔄 Proteína Dual | +20% carregamento do SURGE |
-| ✨ Célula-Tronco | Restaura 20% da vida do nanobô |
+| **Fase 1 — Corrente Sanguínea** | NANOCELL-1 é injetado. Primeiros vírus Alfa testam as defesas. Aprendizado das mecânicas. |
+| **Fase 2 — Pulmões** | Nexus-7 invade os alvéolos. O cenário pulsa com a respiração do paciente. O vírus se torna mais organizado. |
+| **Fase 3 — Sistema Nervoso** | Ataque ao cérebro. Inimigos adaptados imitam o jogador. Batalha final contra o Nexus Omega. |
 
-### 5. Dash de Evasão
+---
+## 3. Mecânicas Principais
 
-Pressionando `E`, o NANOCELL-1 executa um dash rápido na direção do movimento atual. Cooldown de 2 segundos. Durante o dash, há 12 frames de invencibilidade (*i-frames*).
+### 3.1 Sistema de Polaridade Cromática
+
+Mecânica central do jogo. O NANOCELL-1 opera em dois estados de polaridade que alteram comportamento de disparo, absorção e vulnerabilidade:
+
+* **Alternância de Polaridade:** O jogador pode alternar a cor do NANOCELL-1 instantaneamente entre Azul (Frio) e Vermelha (Quente).
+* **Ataque:** Disparos azuis causam dano em inimigos vermelhos, e vice-versa.
+* **Defesa:** Se o jogador estiver Azul, ele é imune a projéteis azuis (eles são absorvidos carregando o especial SURGE), mas recebe dano de projéteis vermelhos.
+* **Movimentação Plana em Mundo 3D:** A navegação ocorre nos eixos X e Z, mantendo o eixo Y fixo (ou com leves variações senoidais para simular flutuação).
+
+### 3.2 Ataque SURGE
+
+Ao absorver projéteis, a barra de SURGE vai de 0% a 100%. Quando cheia, o jogador ativa um super-ataque dependente da polaridade ativa:
+
+- **SURGE Azul — Blizzard:** feixe contínuo de alta potência que atravessa a tela, causando dano extremo durante 2 segundos.
+- **SURGE Vermelho — Inferno:** explosão radial massiva que destrói projéteis e causa dano em área contínuo, expandindo durante 2 segundos.
+
+
+### 3.3 Medidor de Saúde do Paciente (HSP)
+
+Substitui o conceito de "vidas" por um medidor coletivo de 0% a 100% que representa o estado do hospedeiro:
+
+| Ação | Efeito no HSP |
+|---|---|
+| Eliminar inimigo comum | +2% |
+| Eliminar inimigo elite | +5% |
+| Boss derrotado | +15% |
+| Inimigo passa da tela | -3% |
+| NANOCELL-1 recebe dano | -2% por hit |
+| HSP atingir 90% | Boss da fase é invocado imediatamente |
+| HSP atingir 0% | Game Over — reinicia a fase atual |
+
+### 3.4 Dash de Evasão e Barrel Roll
+
+O NANOCELL-1 pode executar um recuo evasivo tático (*Back-Dash*) acompanhado de um *Barrel Roll* completo em torno do próprio eixo (tecla `E`). Cooldown de 2 segundos. Durante a manobra (0.8s), a nave desliza para trás automaticamente escapando de ataques frontais e garante uma breve janela de invulnerabilidade (*i-frames*) — fundamental para sobreviver a padrões densos de vírus.
+
+
+### 3.5 Absorção Celular (Vida e Surge)
+
+Para manter o foco tático na mecânica de polaridade e evitar poluição visual com itens na tela, os clássicos *Power-ups* foram substituídos por um sistema orgânico de absorção:
+
+* **Recuperação Dupla:** Absorver projéteis ou chocar-se contra inimigos da mesma cor da sua polaridade tem dois efeitos simultâneos:
+  1. Recarrega uma porcentagem da barra de ataque especial **SURGE**.
+  2. Recupera uma fração da **Vida** do NANOCELL-1.
+* **Taxas Variáveis:** A quantidade de vida recuperada depende do tipo de ataque absorvido (lasers pesados ou inimigos maiores curam uma taxa maior).
+* **Risco vs Recompensa:** O **dano** sofrido ao colidir com a cor oposta é **sempre rigorosamente superior** à quantidade de vida ganha ao absorver a cor correta. Isso garante que o jogador não abuse da mecânica de cura e seja forçado a pilotar e alternar as cores com precisão cirúrgica.
+
+### 3.6 Screen Wrapping (Efeito Pac-Man / Asteroids)
+
+Para manter a dinâmica ágil e compensar a câmera fixa no eixo X, o jogo utiliza uma mecânica de teletransporte nas bordas laterais (*Screen Wrapping*). Se o NANOCELL-1 ultrapassar o limite máximo de visão da câmera pela direita, ele reaparecerá imediatamente na borda esquerda, e vice-versa. Isso cria novas estratégias evasivas e garante que a nave nunca "suma" do campo de visão.
 
 ---
 
-## Controles
+## 4. Controles
 
 | Tecla | Ação |
 |---|---|
-| `W A S D` | Movimentação 2D do NANOCELL-1 |
-| `SPACE` | Disparo contínuo (polaridade ativa) |
-| `SHIFT` | Alternar polaridade (Azul ↔ Vermelho) |
-| `Q` | Ativar SURGE (quando 100% carregado) |
-| `E` | Dash de evasão (cooldown 2s) |
-| `ESC` | Pausar / Menu principal |
-| `F` | Tela cheia (*fullscreen*) |
-| `R` | Reiniciar fase (após Game Over) |
+| `W` `A` `S` `D` | Movimentação 2D do NANOCELL-1 |
+| `SPACE` | Disparo contínuo na polaridade ativa |
+| `TAB` / `C` | Alternar polaridade (Azul ↔ Vermelho) |
+| `Q` | Ativar SURGE (apenas quando barra estiver cheia) |
+| `E` | Back-Dash evasivo com Barrel Roll (cooldown 2 s) |
+| `R` | Fazer um Barrel Roll sem recuo no ar (Manobra Estilosa) |
+| `1` a `4` | Alternar modos de Câmera (1 e 2: Ação 3D Dinâmica, 3: Modo Ikaruga Arcade 2D, 4: Livre) |
+| `ESC` | Pausar jogo / Abrir menu de pausa |
+| `F` | Alternar fullscreen / janela |
+| `ENTER` | Confirmar seleção nos menus |
 
+> **Nota de implementação:** Movimentação via `glutKeyboardFunc` e `glutSpecialFunc`. Estado das teclas mantido em array booleano `keyState[256]` para movimento suave frame a frame.
 ---
+## 5. Fases e Progressão
 
-## Fases e Progressão
+### 5.1 Fase 1 — Corrente Sanguínea
 
-### Fase 1 — Corrente Sanguínea
-**Cenário:** Scroll horizontal com hemácias 3D flutuando como obstáculos decorativos. Plasma sanguíneo simulado por blending OpenGL.  
-**Mecânica especial:** Correntes de plasma aumentam temporariamente a velocidade do nanobô.  
-**Boss:** *Leukocyte Corrupto* — leucócito infectado com 3 padrões de ataque.  
-**Objetivo narrativo:** Tutorial implícito. O jogador aprende o sistema de polaridade.
+| Campo | Detalhe |
+|---|---|
+| **Objetivo** | Introduzir o sistema de polaridade e controles básicos |
+| **Ambiente** | Scroll vertical lento. Hemácias 3D passam como obstáculos decorativos. Plasma simulado via blending OpenGL com objetos semi-transparentes. |
+| **Inimigos** | Vírus Alfa (enxame Boids azul) e Bactéria Coco (tanque vermelho lento) |
+| **Mecânica especial** | Introdução ao sistema de Boids e polaridade cromática |
+| **Boss — Leukocyte Corrupto** | 3 estados: patrulha senoidal → ataque em espiral → fúria com projéteis densos em todas as direções |
+| **Gatilho do Boss** | HSP atinge 90% ou 120 segundos de fase decorridos |
 
-### Fase 2 — Barreira Pulmonar
-**Cenário:** Alvéolos que se expandem e contraem em ciclo de 4 segundos. Inimigos sincronizam aparições com o ritmo da "respiração".  
-**Mecânica especial:** Alvéolo expandido = janela de vulnerabilidade do boss.  
-**Boss:** *Pneumococo Gigante* — ataca exclusivamente no ciclo de expiração.
 
-### Fase 3 — Nódulo Linfático
-**Cenário:** Interior de gânglio linfático com fluxo de linfa como corrente de fundo.  
-**Mecânica especial:** Linfócitos T aliados circulam na tela e podem ser coletados como escudo. Linfócitos corrompidos imitam a aparência dos aliados — a distinção é feita pela cor.  
-**Boss:** *Nexus-7 Beta* — aprende a polaridade dominante usada pelo jogador e aumenta projéteis da cor oposta.
+### 5.2 Fase 2 — Pulmões
 
-### Fase 4 — Sistema Nervoso Central
-**Cenário:** Axônios e sinapses. Pulsos elétricos atravessam a tela periodicamente.  
-**Mecânica especial:** Descarga sináptica **inverte os controles** do jogador por 3 segundos. Vírus Delta copia posição e disparo do nanobô com 2s de delay.  
-**Boss:** *Ganglion Prime* — ao entrar em *enrage*, inverte a polaridade do jogador forçosamente.
+| Campo | Detalhe |
+|---|---|
+| **Objetivo** | Apresentar mecânica de timing e abertura de janelas |
+| **Ambiente** | Alvéolos 3D expandem e contraem em ciclo sinusoidal |
+| **Inimigos** | Vírus Gama (Atirador bipolar) e Esporo Fúngico (horda kamikaze ultra rápida) |
+| **Mecânica especial** | O fundo pulmonar recebe Overlay sombrio de 70%, destacando intensamente os lasers neon. |
+| **Boss — Pneumococo Gigante** | Escudo impenetrável na inspiração. Na expiração, a defesa cai. Luta progride num denso Bullet-Hell de 3 fases. |
+| **Gatilho do Boss** | HSP atinge 90% ou 120 segundos de fase |
 
-### Fase 5 — Núcleo Viral (Boss Rush)
-**Cenário:** Interior do próprio NEXUS-7. Arena circular fechada, sem scroll.  
-**Mecânica especial:** Sem entrada de novos inimigos comuns — toda a atenção vai ao boss.  
-**Boss Final:** *NEXUS-7 Omega* com 3 formas sequenciais:
+### 5.3 Fase 3 — Sistema Nervoso Central
+
+| Campo | Detalhe |
+|---|---|
+| **Objetivo** | Desafio máximo: inimigos imitadores e controles alterados por pulsos |
+| **Ambiente** | Axônios e sinapses como cenário 3D. Pulsos elétricos percorrem o fundo. Flashes visuais temporários simulam interferência. |
+| **Inimigos** | Príon Mimético (copia posição do jogador com 1,5 s de delay) e Vírus Delta (espelha e atira simultaneamente) |
+| **Mecânica especial** | Pulso sináptico a cada 20 s: inverte eixos de movimento por 3 segundos |
+| **Boss — Nexus Omega** | 3 formas: escudo dual → convoca enxame → núcleo exposto com bullet-hell final |
+| **Gatilho do Boss** | HSP atinge 90% ou 120 segundos de fase |
+
+### 5.4 Fluxo de Progressão Geral
 
 ```
-Forma 1 — Escudo Polar      : Destruir escudos da cor correta com projéteis polarizados.
-Forma 2 — Enxame Definitivo : Controla 40 vírus simultâneos via Boids. Cobre toda a arena.
-Forma 3 — Núcleo Exposto    : HP baixo, bullet-hell intenso. SURGE duplo para finalizar.
+Menu Principal
+    └── Fase 1 ──► Resultado ──► Fase 2 ──► Resultado ──► Fase 3 ──► Resultado Final
+              │                        │                        │
+           (morte)                  (morte)                  (morte)
+              └── Game Over ◄────────┴────────────────────────┘
 ```
-
-### Sistema de Ranking por Fase
-
-Ao final de cada fase é atribuído um ranking de **S** a **D** baseado em:
-- Total de kills realizados
-- Saúde do Paciente final (HSP)
-- Dano total recebido pelo nanobô
-- Maior combo de kills consecutivos
-- Tempo total da fase
-
-Ranking S em todas as fases desbloqueia a skin **NEXUS-ZERO** para o NANOCELL-1.
+* **Nota:** As fases são desbloqueadas sequencialmente após a conclusão da anterior.
 
 ---
 
-## Inimigos
+## 6. Inimigos
 
-| Nome | Polaridade | Padrão | Comportamento |
-|---|---|---|---|
-| Vírus Alfa | Azul | Enxame | Boids clássico. Mergulha em formação V. |
-| Bactéria Coco | Vermelho | Linear | Alta vida, tiro duplo, sem IA complexa. |
-| Esporo Fúngico | Azul | Kamikaze | Detecta posição do jogador e vai direto. Explode ao contato. |
-| Vírus Gama | Dual | Camuflagem | Invisível no plasma. Aparece ao atirar. Troca de cor ao ser atingido. |
-| Príon Mimético | Oposta | Shadowplay | Armazena 120 posições do jogador e se move com 2s de atraso. |
-| Vírus Delta | Vermelho | Espelho+Ataque | Copia movimento e dispara simultaneamente. Aprende padrão de evasão. |
-| Microplaqueta Hive | Ambos | Boids Avançado | Metade do enxame é azul, metade vermelha. Exige troca de polaridade constante. |
+| Nome | Polaridade / Tipo | Comportamento |
+|---|---|---|
+| **Vírus Alfa** | 🔵 Azul — Enxame | Ataca em grupo via Boids. Mergulha em formação V ao se aproximar do jogador. |
+| **Bactéria Coco** | 🔴 Vermelho — Tanque | Alta vida, movimento linear, tiro duplo. Serve como obstáculo de absorção. |
+| **Vírus Gama** | Vermelho/azul 🔴 🔵 - Atirador | Atira projéteis teleguiados, mantendo a mecânica de troca de cor a cada 3s (o tiro herda a cor atual do vírus). |
+| **Esporo Fúngico** | 🔵 Azul — Kamikaze em Horda | Detecta a posição do jogador e mergulha em bandos triplos (x3) em altíssima velocidade. Explode em área ao contato. |
+| **Príon Mimético** | Oposta — Espelho | Buffer circular de posições do jogador reproduzido com delay de 1,5 s. |
+| **Vírus Delta** |Vermelho/azul 🔴 🔵 - Hacker | Copia movimento e dispara projéteis da cor oposta. Delay reduz com o tempo. |
+
+### 6.1 Tabela de Balanceamento de HP e Resistência
+
+| Inimigo (Fase)          | Tipo / Comportamento    | HP (Vida)  | Tiros Certos p/ Matar | Tiros Errados p/ Matar |
+|-------------------------|-------------------------|:----------:|:---------------------:|:----------------------:|
+| **Vírus Alfa** (F1) | Enxame fraco (Azul)     |    15.0    |      1 a 2 tiros      |        15 tiros        |
+| **Bactéria Coco** (F1)  | Tanque Lento (Vermelho) |    40.0    |        4 tiros        |        40 tiros        |
+| **Leukocyte Corrupto** (F1)  | BOSS (Fase 1)           |   400.0    |       40 tiros        |       400 tiros        |
+| **Esporo Fúngico** (F2) | Kamikaze (Horda Rápida)|    10.0    |   1 tiro (One-hit)    |        10 tiros        |
+| **Vírus Gama** (F2) | Atirador Bipolar (3s) |    20.0    |        2 tiros        |        20 tiros        |
+| **Pneumococo Gigante**  | BOSS F2 (3 Fases Bullet-Hell)|   600.0    |       60 tiros        |       600 tiros        |
+| **Príon Mimético** (F3) | Copia sua posição       |    30.0    |        3 tiros        |        30 tiros        |
+| **Vírus Delta** (F3) | Atira e reflete danos   |    45.0    |      4 a 5 tiros      |        45 tiros        |
+| **Nexus Omega** (F3)   | BOSS FINAL (Fase 3)     |   1200.0   | 120 tiros (Use SURGE!)| Impossível sem a cor certa |
+
+**Análise do Design:**
+- A **Bactéria Coco** tem 40 de HP justamente porque é um "Tanque" de resistência, obrigando o jogador a ficar atirando nela por alguns segundos.
+- O **Esporo Fúngico** tem vida quase nula (10 de HP), pois como ele é um "Kamikaze" que se joga contra você muito rápido, o jogador precisa conseguir matá-lo em um milissegundo de reação.
+- O **Nexus Omega (Final Boss)** tem tanta vida que obrigará o jogador a usar o medidor de **SURGE (Especial)** várias vezes durante a luta para conseguir vencer.
+
+### 6.2 Tabela de Danos (Nanocell e Paciente)
+
+| Inimigo / Entidade | Tipo de Ataque | Dano na Nanocell | Impacto no Paciente (HSP) |
+|:---|:---|:---:|:---:|
+| **Qualquer Inimigo** | **Fuga** (Passar direto pela tela) | `0%` | `-3.0%` (Punição) |
+| **Vírus Alfa** (F1) | **Colisão Física** (Mergulho) | `-10.0%` | `0%` |
+| **Bactéria Coco** (F1) | **Colisão Física** (Trombar) | `-10.0%` | `0%` |
+| **Bactéria Coco** (F1) | **Projétil** (Tiro Duplo) | `-5.0%` (por tiro) | `0%` |
+| **Esporo Fúngico** (F2) | **Colisão Explosiva** (Área) | `-20.0%` | `-5.0%` (Infecção grave) |
+| **Vírus Gama** (F2) | **Colisão Física** | `-10.0%` | `0%` |
+| **Vírus Gama** (F2) | **Projétil** (Laser Teleguiado) | `-15.0%` | `0%` |
+| **Príon Mimético** (F3) | **Colisão Física** | `-15.0%` | `0%` |
+| **Vírus Delta** (F3) | **Projétil Refletido** | `-8.0%` (por acerto) | `0%` |
+| **Bosses (Qualquer Fase)** | **Colisão Física Direta** | `-30.0%` (Esmagamento) | `-10.0%` |
+| **Bosses (Qualquer Fase)** | **Habilidades Especiais**| `-10.0%` a `-20.0%` | `0%` |
+
+*(Nota: Destruir qualquer inimigo sempre curará o paciente em `+2.0%` de HSP como recompensa).*
 
 ---
 
-## Inteligência Artificial
+## 7. Inteligência Artificial
 
-### Algoritmo de Boids (Craig Reynolds, 1986)
+### Algoritmo de Boids (Craig Reynolds, 1986)  — Enxame dos Vírus
 
 Os vírus menores operam via 3 regras base + 2 extensões combativas:
 
@@ -215,9 +267,10 @@ R5 — Fuga SURGE  : Se o SURGE do jogador está carregado, o enxame aumenta sep
                    e dispersa preventivamente para reduzir dano em área.
 ```
 
+
 **Otimização:** Spatial hashing em grade 32×32 reduz busca de vizinhos de O(n²) para ~O(n).
 
-### Máquina de Estados dos Bosses
+### 7.2 Máquina de Estados dos Bosses (FSM)
 
 ```
 PATRULHA   (vida > 70%)  → Movimento senoidal. Ataques básicos e previsíveis.
@@ -227,116 +280,112 @@ ADAPTAÇÃO  (Nexus-7)     → Memoriza polaridade dominante do jogador e contra
                            com projéteis da cor oposta em maior frequência.
 ```
 
-### IA dos Príons Miméticos
+### 7.3 Príon Mimético — Buffer Circular
 
-Utiliza **buffer circular** de posições:
-1. Armazena as últimas 120 posições (x, y) do NANOCELL-1 (equivalente a 2s a 60fps).
-2. Move-se exatamente para a posição `[t - 2s]` a cada frame.
-3. Dispara projéteis com cor oposta mirando a posição atual do jogador (predição simples).
-4. O delay diminui progressivamente conforme a vida do Príon cai: 2s → 1.5s → 1s → 0.5s.
+O Príon Mimético usa uma fila circular de **90 posições (x, y)** do jogador (1,5 s × 60 FPS):
 
+1. A cada frame, a posição atual do NANOCELL-1 é inserida na cabeça da fila.
+2. O Príon se move para a posição `[t - 1,5 s]` lida da cauda da fila.
+3. Dispara projéteis da cor oposta ao estado atual do jogador com predição simples.
+4. O delay diminui de **1,5 s → 0,8 s** conforme a vida do Príon cai abaixo de 50%.
 ---
 
-## Sistema de Pontuação
+## 8. HUD e Interface
 
-### Multiplicadores de Combo
-
-| Multiplicador | Condição |
-|---|---|
-| ×1 (base) | Qualquer kill sem combo ativo |
-| ×2 | 5 kills consecutivos sem receber dano |
-| ×3 | 10 kills + troca de polaridade com absorção ativa |
-| ×5 | Kill realizado durante SURGE ativo |
-| ×10 | Boss derrotado sem tomar nenhum dano na fase inteira (*Perfect Clear*) |
-
-### Moeda: Fragmentos de DNA
-
-Dropados por inimigos ao morrer. Acumulados entre fases e gastos na **Árvore de Upgrades**:
-
-```
-Caminho Ataque     → Dano base, cadência de disparo, tamanho dos projéteis
-Caminho Absorção   → SURGE carrega mais rápido, raio de absorção maior
-Caminho Mobilidade → Velocidade base, dash mais rápido, cooldown reduzido
-```
-
----
-
-## HUD e Interface
+O HUD é desenhado via `glOrtho` em coordenadas de tela (overlay 2D sobre a cena 3D), sem fontes externas — texto via `glutBitmapCharacter`.
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│  NANOCELL-1 ❤️❤️❤️          FASE 3 — NÓDULO LINFÁTICO  │
+│  NANOCELL-1                 FASE 1 — Corrente Sanguínea │
 │  VIDA   ███████░░  78%      HSP   ██████░░░  62%        │
-│                                                          │
-│  ● POLARIDADE: AZUL         SURGE ████░░░░  47%         │
-│                                                          │
-│  SCORE: 48.200   COMBO: x3   DNA: ◈ 120                 │
+│                                                         │
+│  ● POLARIDADE: AZUL🔵        SURGE ████░░░░  47%        │
 └─────────────────────────────────────────────────────────┘
 ```
 
-- **Vida do nanobô:** barra superior esquerda (3 corações máximo).
-- **HSP:** barra superior direita — verde acima de 50%, amarela entre 25–50%, vermelha abaixo de 25%.
-- **Indicador de polaridade:** círculo colorido com brilho pulsante (azul ou vermelho).
-- **Medidor SURGE:** barra lateral — pisca ao atingir 100%.
-- **Score / Combo / DNA:** rodapé inferior central.
+| Elemento | Localização e Função |
+|---|---|
+| **Vida do NANOCELL-1** | Superior esquerdo — barra horizontal segmentada em 5 divisões |
+| **Barra de SURGE** | Superior esquerdo — abaixo da vida. Cor muda conforme polaridade ativa |
+| **Indicador de Polaridade** | Centro superior — círculo pulsante com cor e nome do estado ativo |
+| **Medidor HSP** | Superior direito — barra vertical de 0% a 100% com valor numérico |
+| **Timer de fase** | Inferior direito — contagem até spawn forçado do boss |
+| **Nome da fase** | Inferior esquerdo — tag permanente durante o jogo |
+| **Mensagem de evento** | Centro inferior — alertas como `BOSS EM APROXIMAÇÃO` por 2 s |
 
+### 8.1 Telas do Jogo
+
+- **Menu Principal:** título animado, opções Jogar / Controles/configs / Créditos / Sair
+- **Pausa:** overlay semi-transparente — Continuar / Reiniciar Fase / Sair
+- **Game Over:** animação de dissolução, botão de reinício
+- **Resultado:** HSP final, fragmentos coletados, próxima fase
 ---
-
-## Recursos OpenGL Utilizados
+## 9. Recursos OpenGL Utilizados
 
 | Recurso | Aplicação no Jogo |
 |---|---|
-| **Texturas 2D** | Sprites orgânicos dos inimigos, plasma sanguíneo, fundo de fase |
-| **Gouraud Shading** | Interpolação suave de cor em membranas celulares e corpo dos bosses |
-| **Blending** (`GL_SRC_ALPHA`) | Transparência de plasma, efeitos de SURGE, partículas de explosão |
-| **Depth Buffer** | Objetos 3D de fundo em Z negativo; gameplay 2D em Z = 0 |
-| **Iluminação por ponto de luz** | Luz ambiente + ponto de luz dinâmico na cor da polaridade ativa |
-| **Sistema de partículas** | CPU-side, 512 partículas simultâneas para trails e explosões |
-| **Display Lists / VBOs** | Geometria estática de fundo pré-compilada para performance |
-| **Viewport e Projeção** | Perspectiva 3D para fundo; ortográfica 2D para gameplay e HUD |
+| `glOrtho` — Projeção Ortográfica | Visão isométrica da arena. Escala uniforme sem perspectiva. |
+| `GL_LIGHTING` — Iluminação | Ponto de luz central. Inimigos e nave com `GL_DIFFUSE` e `GL_SPECULAR`. |
+| Gouraud Shading | Interpolação suave de cor por vértice nas membranas celulares e corpos dos inimigos. |
+| `glBindTexture` — Texturização | Sprites de inimigos, projéteis e fundo orgânico como texturas PNG via `stb_image.h`. |
+| `GL_BLEND` — Alpha Blending | Plasma, aura de polaridade e partículas com `GL_SRC_ALPHA + GL_ONE_MINUS_SRC_ALPHA`. |
+| `glNewList` — Display Lists | Geometrias fixas (hemácias, alvéolos) pré-compiladas para reuso eficiente. |
+| `GL_DEPTH_TEST` — Depth Buffer | Fundo 3D em z < 0, jogabilidade em z = 0, HUD em z > 0. |
+| `GL_FOG` | Névoa volumétrica para simular profundidade do plasma e ambiente orgânico. |
+| `glutBitmapCharacter` | Renderização de texto do HUD sem dependência externa de fontes. |
+| `glScissor` / `glViewport` | Limitação de área de renderização para barras de HUD e tela de pausa. |
 
 ---
 
-## Arquitetura do Projeto
+---
 
-```
-imunidade/
+## 10. Arquitetura do Projeto
+
+### 10.1 Estrutura de Arquivos
+
+A arquitetura foi planejada de forma modular e orientada a objetos para separar a lógica de negócio das chamadas de baixo nível do OpenGL, facilitando a manutenção e a adequação aos requisitos de multiplataforma.
+
+```text
+NTF-CG-Jogo/
 ├── src/
-│   ├── main.cpp              # Loop principal GLUT, callbacks de input e timer
-│   ├── renderer.cpp          # Pipeline OpenGL: texturas, shaders, iluminação
-│   ├── renderer.h
-│   ├── ai_boids.cpp          # Implementação Boids (5 regras) + spatial hashing
-│   ├── ai_boids.h
-│   ├── ai_fsm.cpp            # Máquina de estados dos bosses
-│   ├── ai_fsm.h
-│   ├── collision.cpp         # Broadphase (grid) + Narrowphase (AABB / círculo)
-│   ├── collision.h
-│   ├── audio.cpp             # Integração SDL_Mixer: música + SFX
-│   ├── audio.h
-│   ├── hud.cpp               # Renderização do HUD (modo ortográfico)
-│   ├── hud.h
-│   ├── entities/
-│   │   ├── player.cpp        # NANOCELL-1: movimento, polaridade, SURGE, dash
-│   │   ├── enemy.cpp         # Base de inimigos + especializações
-│   │   ├── boss.cpp          # Lógica específica dos 5 bosses
-│   │   └── projectile.cpp    # Projéteis com tag de polaridade
-│   └── scenes/
-│       ├── scene_base.cpp    # Interface base de cena
-│       ├── scene_01_blood.cpp
-│       ├── scene_02_lung.cpp
-│       ├── scene_03_lymph.cpp
-│       ├── scene_04_nerve.cpp
-│       └── scene_05_core.cpp
+│   ├── core/         # Motores base: Renderer (abstração OpenGL), Sistema de Janela, Input, Física
+│   ├── entities/     # Lógica das entidades: Player (NANOCELL-1), Inimigos, Bosses, Projéteis
+│   └── scenes/       # Gerenciamento de Estados/Cenas: Menu, Fases (Corrente Sanguínea, etc)
 ├── assets/
-│   ├── textures/             # PNG: sprites, fundos, HUD
-│   ├── audio/                # OGG: músicas · WAV: SFX
-│   └── models/               # OBJ: geometria 3D dos bosses (tinyobjloader)
-├── include/                  # Headers de terceiros (GLM, stb_image, etc.)
-├── Makefile
+│   ├── textures/     # PNG: sprites, texturas orgânicas e elementos de HUD
+│   ├── audio/        # OGG: trilhas sonoras · WAV: efeitos especiais (SFX)
+│   └── models/       # OBJ: modelos 3D carregados via tinyobjloader
+├── include/          # Headers de terceiros (header-only como stb_image e tinyobjloader)
+├── Docs/             # Documentação de análise e referências teóricas da disciplina
 └── README.md
 ```
 
-### Detecção de Colisão
+
+### 10.2 Loop de Jogo
+
+```
+glutTimerFunc(16ms)
+    └── update()
+          ├── input processing (keyState[])
+          ├── player.update()
+          ├── enemies.update() → boids.update()
+          ├── projectiles.update()
+          ├── collision.check()
+          ├── hsp.update()
+          └── glutPostRedisplay()
+
+glutDisplayFunc → render()
+    ├── glClear()
+    ├── draw3DScene()   ← fundo, inimigos, projéteis, player
+    ├── drawParticles()
+    ├── drawHUD()       ← overlay glOrtho
+    └── glutSwapBuffers()
+```
+
+**Estados do jogo:** `MENU → PLAYING → PAUSED → GAMEOVER → RESULT`
+
+
+### 10.3 Detecção de Colisão
 
 **Fase Larga (Broadphase):** grade espacial 32×32 células. Apenas entidades na mesma célula ou vizinhas são testadas — reduz O(n²) para ~O(n).
 
@@ -352,35 +401,49 @@ projetil.cor != jogador.polaridade  →  dano normal + feedback visual
 ```
 
 ---
+## 11. Dependências e Compilação
 
-## Dependências e Compilação
+### 11.1 Dependências
 
-### Bibliotecas Necessárias
+| Biblioteca | Uso |
+|---|---|
+| **OpenGL 3.3+** | Pipeline gráfico principal |
+| **freeGLUT** | Janela, contexto OpenGL, input e timer |
+| **GLEW** | Carregamento de extensões OpenGL |
+| **SDL2** | Inicialização de áudio cross-platform |
+| **SDL2_mixer** | Reprodução de OGG (música) e WAV (SFX) |
+| **stb_image.h** | Carga de PNG/JPG para texturas (header-only) |
 
-| Biblioteca | Uso | Instalação (Ubuntu/Debian) |
-|---|---|---|
-| freeGLUT | Janela e callbacks OpenGL | `apt install freeglut3-dev` |
-| GLEW | Extensões OpenGL | `apt install libglew-dev` |
-| SDL2_mixer | Áudio (música + SFX) | `apt install libsdl2-mixer-dev` |
-| GLM | Matemática vetorial (Boids) | `apt install libglm-dev` |
-| stb_image | Carregamento de texturas PNG | Incluso em `include/` (header-only) |
-| tinyobjloader | Carregamento de modelos OBJ | Incluso em `include/` (header-only) |
+### 11.2 Instalação das Dependências
 
-### Compilação
+**Fedora / RHEL:**
+```bash
+sudo dnf install freeglut-devel SDL2-devel SDL2_mixer-devel glew-devel
+```
+
+**Ubuntu / Debian:**
+```bash
+sudo apt install freeglut3-dev libsdl2-dev libsdl2-mixer-dev libglew-dev
+```
+
+**macOS (Homebrew):**
+```bash
+brew install freeglut sdl2 sdl2_mixer glew
+```
+
+### 11.3 Compilação
 
 ```bash
-# Instalar dependências (Ubuntu/Debian)
-sudo apt update
-sudo apt install freeglut3-dev libglew-dev libsdl2-mixer-dev libglm-dev
+# Linux / macOS (Use -j4 para utilizar múltiplos núcleos e compilar mais rápido)
+make -j4
 
-# Clonar e compilar
-git clone https://github.com/usuario/imunidade-guerra-celular.git
-cd imunidade-guerra-celular
-make
+# Cross-compile para Windows (MinGW)
+make win
 
-# Executar
-./imunidade
+# Limpar build
+make clean
 ```
+
 
 ### Makefile (resumo)
 
@@ -391,20 +454,27 @@ LIBS     = -lGL -lGLU -lglut -lGLEW -lSDL2_mixer
 TARGET   = imunidade
 ```
 
+### 11.4 Flags de Compilação
+
+| Plataforma | Flags de Linker |
+|---|---|
+| **Linux / macOS** | `-lGL -lGLU -lfreeglut -lSDL2 -lSDL2_mixer -lGLEW` |
+| **Windows (MinGW)** | `-lopengl32 -lglu32 -lfreeglut -lSDL2 -lSDL2_mixer -lglew32` |
+| **Comuns** | `-std=c++17 -O2 -Wall` |
+
+
 ---
 
-## Referências e Inspirações
+## 12. Referências e Inspirações
 
-### Jogos
+### 12.1 Jogos de Referência
 
-| Jogo | Influência |
+| Jogo | Elemento Adotado |
 |---|---|
-| **Space Invaders** (Taito, 1978) | Estrutura base de shmup, formações de inimigos |
-| **Galaxian** (Namco, 1979) | Inimigos com ataques individuais em mergulho |
-| **Galaga** (Namco, 1981) | Padrões de entrada em formação, power-ups de nave |
-| **Xenon II: Megablast** (Bitmap Brothers, 1989) | Scroll vertical, variedade de inimigos biológicos |
-| **Deluxe Galaga** (Edgar M. Vigdal, 1994) | Sistema de multiplicadores e bonus stages |
-| **Ikaruga** (Treasure, 2001) | **Sistema de polaridade cromática — inspiração direta** |
+| **Space Invaders** (Taito, 1978) | Estrutura base de shmup: oleadas, progressão por ondas |
+| **Ikaruga** (Treasure, 2001) | Sistema de polaridade cromática (absorção vs. dano), mecânica de SURGE |
+| **Galaga** (Namco, 1981) | Padrões de ataque em enxame, dive-bombing, formações de inimigos |
+| **Xenon II Megablast** (Bitmap Bros, 1989) | Scroll com obstáculos orgânicos, power-ups e boss de fase |
 
 ### Algoritmos e Artigos
 
@@ -416,24 +486,8 @@ TARGET   = imunidade
 
 - [freeGLUT](http://freeglut.sourceforge.net/) — Implementação livre do GLUT
 - [GLEW](http://glew.sourceforge.net/) — OpenGL Extension Wrangler
-- [GLM](https://glm.g-truc.net/) — OpenGL Mathematics
 - [SDL2_mixer](https://www.libsdl.org/projects/SDL_mixer/) — Áudio multiplataforma
 - [stb_image](https://github.com/nothings/stb) — Carregamento de imagens (header-only)
 - [tinyobjloader](https://github.com/tinyobjloader/tinyobjloader) — Parser de arquivos OBJ
 
 ---
-
-## Equipe
-
-| Membro | Função |
-|---|---|
-| [Seu Nome] | Desenvolvimento completo |
-
-**Disciplina:** Computação Gráfica (DC/CCN032)  
-**Período:** 2026.1  
-**Instituição:** Universidade Federal do Piauí (UFPI)  
-**Professor:** Prof. Dr. Laurindo de Sousa Britto Neto
-
----
-
-*"No universo microscópico, até a menor célula pode mudar o destino de um paciente."*

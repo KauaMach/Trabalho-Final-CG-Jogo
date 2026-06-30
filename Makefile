@@ -1,40 +1,38 @@
 CXX = g++
-CXXFLAGS = -std=c++17 -Wall -Wextra -O0 -I./src/bibliotecas -I./src
-LIBS = -lmingw32 -lfreeglut -lopengl32 -lglu32 -lSDL2main -lSDL2 -lSDL2_mixer -mconsole
-TARGET = imunidade_jogo.exe
+CXXFLAGS = -std=c++17 -Wall -O3 -Iinclude -Isrc
 
-# LISTA ATUALIZADA COM OS DOIS FICHEIROS SEPARADOS
-SRC = src/main.cpp \
-      src/classes/renderer.cpp \
-      src/classes/renderer_menu.cpp \
-      src/classes/renderer_player.cpp \
-      src/classes/renderer_virus1.cpp \
-      src/classes/renderer_virus2.cpp \
-      src/classes/renderer_virus3.cpp \
-      src/classes/renderer_virus4.cpp \
-      src/classes/collision.cpp \
-      src/classes/ai_boids.cpp \
-      src/classes/ai_fsm.cpp \
-      src/classes/particles.cpp \
-      src/classes/audio.cpp
+# Configurações de Linker (Multiplataforma)
+LIBS_LINUX = -lGL -lGLU -lglut -lGLEW -lSDL2 -lSDL2_mixer
+LIBS_MAC = -framework OpenGL -framework GLUT -lGLEW -lSDL2 -lSDL2_mixer
+LIBS_WIN = -lopengl32 -lglu32 -lfreeglut -lglew32 -lSDL2 -lSDL2_mixer
 
-OBJ = $(SRC:.cpp=.o)
+SRC_FILES = $(wildcard src/*.cpp) $(wildcard src/core/*.cpp) $(wildcard src/scenes/*.cpp) $(wildcard src/entities/*.cpp)
+OBJ_FILES = $(SRC_FILES:.cpp=.o)
+TARGET = imunidade
 
+UNAME_S := $(shell uname -s)
+
+ifeq ($(UNAME_S),Linux)
+	LIBS = $(LIBS_LINUX)
+endif
+ifeq ($(UNAME_S),Darwin)
+	LIBS = $(LIBS_MAC)
+endif
+
+# Regra padrao
 all: $(TARGET)
 
-$(TARGET): $(OBJ)
-	$(CXX) $(CXXFLAGS) $(OBJ) -o $(TARGET) $(LIBS)
-	@echo Executavel gerado com sucesso!
+$(TARGET): $(OBJ_FILES)
+	$(CXX) -o $@ $^ $(LIBS)
+
+# Compilacao Cruzada para Windows (usando MinGW no Linux/Mac)
+win: CXX = x86_64-w64-mingw32-g++
+win: LIBS = $(LIBS_WIN)
+win: TARGET = imunidade.exe
+win: clean $(TARGET)
 
 %.o: %.cpp
-	@echo Compilando $<...
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 clean:
-	@echo Limpando arquivos temporarios...
-	@if exist src\main.o del /Q src\main.o
-	@if exist src\classes\*.o del /Q src\classes\*.o
-	@if exist $(TARGET) del /Q $(TARGET)
-	@echo Limpeza concluida!
-
-.PHONY: all clean
+	rm -f $(OBJ_FILES) imunidade imunidade.exe
