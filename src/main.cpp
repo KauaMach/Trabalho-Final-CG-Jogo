@@ -9,8 +9,8 @@
 #include "core/ParticleSystem.h"
 #include <cstdlib> // Para rand()
 
-bool showCollisionBoxes = false;       // Variavel de Debug (Controla a exibicao dos fios de colisao)
-bool unlockAllPhasesForTesting = true; // ATALHO: Desbloqueia todas as fases no menu de forma instantânea
+bool showCollisionBoxes = false;        // Variavel de Debug (Controla a exibicao dos fios de colisao)
+bool unlockAllPhasesForTesting = false; // ATALHO: Desbloqueia todas as fases no menu de forma instantânea
 
 GameState currentState = STATE_MENU;
 MenuUI menuUI;
@@ -32,6 +32,7 @@ bool bossSpawned = false;
 bool boss2Spawned = false;
 bool boss3Spawned = false;
 bool fase2Desbloqueada = false; // Desbloqueio progressivo
+bool fase3Desbloqueada = false; // Desbloqueio progressivo
 
 float gameTimer = 0.0f;
 int enemiesKilled = 0;
@@ -416,27 +417,30 @@ void KeyboardDown(unsigned char key, int x, int y)
         }
     }
 
-    // Troca de câmeras em tempo real
-    if (key == '1')
-        cameraMode = 1;
-    if (key == '2')
-        cameraMode = 2;
-    if (key == '3')
-        cameraMode = 3;
-    if (key == '4')
-        cameraMode = 4;
+    if (currentState == STATE_PLAYING)
+    {
+        // Troca de câmeras em tempo real
+        if (key == '1')
+            cameraMode = 1;
+        if (key == '2')
+            cameraMode = 2;
+        if (key == '3')
+            cameraMode = 3;
+        if (key == '4')
+            cameraMode = 4;
 
-    // Troca de Polaridade da Nave
-    if (key == 9 || key == 'c' || key == 'C')
-        player.TogglePolarity(); // 9 = TAB
+        // Troca de Polaridade da Nave
+        if (key == 9 || key == 'c' || key == 'C')
+            player.TogglePolarity(); // 9 = TAB
 
-    // Disparo Duplo
-    if (key == ' ')
-        player.Shoot();
+        // Disparo Duplo
+        if (key == ' ')
+            player.Shoot();
 
-    // SURGE
-    if (key == 'q' || key == 'Q')
-        player.ActivateSurge();
+        // SURGE
+        if (key == 'q' || key == 'Q')
+            player.ActivateSurge();
+    }
 }
 
 void KeyboardUp(unsigned char key, int x, int y)
@@ -586,6 +590,10 @@ void Timer(int value)
                     if (currentPhase == 1)
                     {
                         fase2Desbloqueada = true; // Libera Fase 2
+                    }
+                    else if (currentPhase == 2)
+                    {
+                        fase3Desbloqueada = true; // Libera Fase 3
                     }
                     currentState = STATE_VICTORY;
                 }

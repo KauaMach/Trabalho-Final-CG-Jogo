@@ -3,6 +3,7 @@
 
 extern int currentPhase;
 extern bool fase2Desbloqueada;
+extern bool fase3Desbloqueada;
 extern bool unlockAllPhasesForTesting;
 #include "core/AudioManager.h"
 #include "entities/Player.h"
@@ -147,7 +148,7 @@ void MenuUI::HandleClick(int mouseX, int realMouseY, GameState &state)
         if (mouseX >= 120.0f && mouseX <= 900.0f && realMouseY >= 150.0f && realMouseY <= 300.0f)
         {
             audioManager.PlayClickSound();
-            if (unlockAllPhasesForTesting) {
+            if (fase3Desbloqueada || unlockAllPhasesForTesting) {
                 currentPhase = 3;
                 ResetGame();
                 state = STATE_PLAYING;
@@ -197,8 +198,10 @@ void MenuUI::HandleClick(int mouseX, int realMouseY, GameState &state)
                 ResetGame();
                 state = STATE_PLAYING;
             } else if (currentPhase == 2) {
-                std::cout << "FASE 3 AINDA NAO IMPLEMENTADA. AGUARDE A PROXIMA ATUALIZACAO." << std::endl;
-                state = STATE_SELECAO_FASE;
+                currentPhase = 3;
+                fase3Desbloqueada = true;
+                ResetGame();
+                state = STATE_PLAYING;
             } else {
                 state = STATE_SELECAO_FASE;
             }
@@ -313,7 +316,7 @@ void MenuUI::Render(GameState state)
         }
 
         // Desenha o cadeado em cima da Fase 3
-        if (!unlockAllPhasesForTesting) {
+        if (!fase3Desbloqueada && !unlockAllPhasesForTesting) {
             Renderer::DrawTexture(cadeadoTexture, 490 - 45, 220 - 45, 90, 90);
         }
 

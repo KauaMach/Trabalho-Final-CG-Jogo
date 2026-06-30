@@ -1,136 +1,80 @@
 # Roteiro de Apresentação — Imunidade: A Guerra Celular
 
-Este documento consolida e mapeia **exatamente todos os pontos exigidos pelo Prof. Dr. Laurindo**, estruturando a sua apresentação e o relatório técnico da SBC para que não restem brechas para questionamentos.
+Este documento consolida e mapeia **todos os pontos técnicos e conceituais exigidos**, estruturando a sua apresentação e o relatório técnico da disciplina de Computação Gráfica para que você tenha todas as respostas na ponta da língua e se destaque perante os questionamentos do professor.
 
 ---
 
-## 1. Resumo
-**Breve descrição do jogo:**
-"Imunidade: A Guerra Celular" é um Shoot 'em Up (Shmup) com perspectiva isométrica 3D, ambientado no interior do corpo humano. O jogador controla o *NANOCELL-1*, um nanobô médico encarregado de erradicar o vírus sintético *Nexus-7*. O jogo se destaca pela mecânica de polaridade cromática (inspirada em Ikaruga), onde o estado da nave (Azul/Vermelho) determina quais projéteis ela absorve e quais causam dano.
+## 1. Resumo e Pitch do Projeto
+**O que é o projeto?**
+"Imunidade: A Guerra Celular" é um jogo de tiro espacial (*Shoot 'em Up / Bullet-Hell*) com perspectiva isométrica 3D, ambientado no interior do corpo humano. O jogador controla o *NANOCELL-1*, um nanobô médico que deve erradicar vírus sintéticos e superbactérias.
+
+**Diferencial Mecânico:** A jogabilidade é baseada em *Polaridade Cromática* (inspirada no clássico Ikaruga):
+- **Polaridade Azul:** Absorve tiros azuis (curando e gerando carga pro especial), mas toma dano fatal de elementos vermelhos. Causam dano bônus em inimigos vermelhos.
+- **Polaridade Vermelha:** A mesma regra invertida (absorve o vermelho, sofre com o azul).
+- A troca de polaridade é o pilar que exige pensamento estratégico e agilidade visual do jogador, fugindo da repetição comum no gênero.
 
 ---
 
-## 2. Introdução
-* **Contexto e Tema:** Um jogo biológico/tecnológico simulando a batalha celular de um organismo em colapso.
-* **Regras:**
-  1. Tiros da mesma cor que o jogador são absorvidos, gerando pontos de *SURGE* (Especial) e recuperando vida.
-  2. Colidir com objetos da cor oposta causa dano severo e reduz a barra de "Saúde do Paciente" (HSP).
-  3. Deixar inimigos passarem pela tela deduz o HSP, exigindo agressividade.
-* **Motivação e Objetivos:** Romper o padrão de jogos estáticos através de um título frenético (*Bullet-Hell*) usando tecnologias clássicas do OpenGL (Fixed-Function Pipeline). O objetivo acadêmico é integrar IA avançada e detecção espacial à pipeline gráfica.
+## 2. Materiais e Tecnologias
+Se o professor perguntar o porquê de cada tecnologia:
+- **OpenGL (Fixed-Function 3.3+) & freeGLUT:** O motor gráfico base. Usado para desenhar na tela, capturar eventos de teclado/mouse e gerenciar matrizes de visualização e projeção. O uso intencional da Pipeline Fixa serve para aplicar diretamente os conceitos matemáticos ensinados em sala.
+- **GLEW:** Fundamental para acessar extensões modernas de hardware da placa de vídeo não inclusas nos headers padrão.
+- **SDL2 & SDL2_mixer:** A solução de áudio. Permite o *multithreading* acústico. Tocamos a música (streaming) assincronamente em um canal paralelo, enquanto alocamos dúzias de "chunks" sonoros instantâneos (lasers e colisões) sem gargalar o laço principal de 60 FPS.
+- **tinyobjloader:** Um parser em C++ robusto para mapear arquivos modelados em 3D (`.obj`) em vetores brutos compreensíveis pela engine do jogo (vértices e texturas).
+- **stb_image.h:** Decodificação veloz e direta de `.png` e `.jpg`, repassando arrays de pixels instantaneamente para a memória de vídeo (VRAM).
 
 ---
 
-## 3. Materiais
-**Bibliotecas utilizadas e suas finalidades:**
-- **OpenGL (Fixed-Function 3.3+) & freeGLUT:** Motor de renderização primário, loop de eventos, criação de janelas e projeções (Perspectivas e Ortográficas).
-- **GLEW:** Gerenciamento eficiente e carregamento de extensões avançadas do OpenGL.
-- **SDL2 & SDL2_mixer:** Implementação unificada e assíncrona de Áudio (música OGG em streaming contínuo e efeitos de som WAV simultâneos).
-- **tinyobjloader (Header-only):** Parser eficiente e robusto em C++ para importar malhas 3D (`.obj`) de inimigos e chefões de forma nativa.
-- **stb_image.h (Header-only):** Biblioteca para carregamento instantâneo das texturas `.png` e `.jpg` direto para os buffers da GPU.
+## 3. Arquitetura de Software e Padrões (Pontos Extras)
+Apresentar uma arquitetura limpa em C++ é sinônimo de maturidade:
+- **Máquina de Estados Finita (FSM):** O laço da aplicação é blindado por um enumerador `GameState` (`STATE_MENU`, `STATE_PLAYING`, `STATE_PAUSE`, etc.). Isso extingue o risco de entradas (cliques e tiros) "vazarem" entre contextos diferentes (exemplo: atirar dentro do menu foi proibido graças a esta máquina).
+- **Herança e Polimorfismo:** A classe abstrata `Inimigo` define métodos virtuais. Assim, enfileiramos os comportamentos mais exóticos (Chefões, Vírus Delta, Kamikazes) em uma simples e única lista `std::vector<Inimigo*>`, executando colisões e atualizações dinamicamente (*Dynamic Dispatch*).
 
 ---
 
 ## 4. Métodos & Funcionalidades (O Coração da Apresentação)
 
-*(Dica: Mostre o código abaixo para o professor e explique as lógicas!)*
+### A. Projeção Híbrida 3D/2D
+**Possível pergunta:** *"Se o jogo aparenta ser 2D, por que usaram estruturas 3D?"*
+**Resposta:** Para gerar profundidade e sombreamento reais! Restringimos a movimentação espacial livre apenas aos eixos X e Z para a navegação, e gerenciamos a "câmera" com maestria. O segredo está em empilhar matrizes (`glPushMatrix`) para desenhar o cenário paralax, depois a cena 3D (inimigos) e, por último e totalmente sobreposto em 2D, os painéis da HUD de vida.
 
-### A. Movimentação e Visão
-O jogo roda num mundo nativamente 3D mas com "Jogabilidade 2D" via projeção ortográfica. Limitamos o movimento aos eixos X e Z para criar o efeito *Top-Down*.
-```cpp
-// Projeção principal do 3D fixada como Isometrica/Ortográfica:
-glMatrixMode(GL_PROJECTION);
-glLoadIdentity();
-glOrtho(-500.0, 500.0, -375.0, 375.0, -2000.0, 2000.0);
-```
+### B. Otimização de Renderização (Display Lists)
+**Possível pergunta:** *"Como garantiram desempenho ao desenhar inimigos de milhares de polígonos usando o clássico `glBegin/glEnd`?"*
+**Resposta:** Nós *não* usamos `glBegin` todo quadro para malhas complexas. Nós compilamos os vértices de cada modelo na GPU na tela de carregamento (via **Display Lists** / `glGenLists`). Durante o jogo, apenas invocamos `glCallList()`, que repassa o fardo para a placa de vídeo.
 
-### B. Detecção de Colisões (Broadphase e Narrowphase)
-Fizemos um salto além do tradicional laço $O(n^2)$. Implementamos uma arquitetura de particionamento espacial. Apenas entidades dentro do mesmo setor (Célula de Grid) testam colisões exatas usando Esferas Bounding (Narrowphase).
-```cpp
-// Exemplo Conceitual (Broadphase + Narrowphase)
-float distSq = (inimigo.x - player.x) * (inimigo.x - player.x) + 
-               (inimigo.z - player.z) * (inimigo.z - player.z);
+### C. Cálculos Algébricos em Tempo Real (Gouraud e Produto Vetorial)
+**Possível pergunta:** *"Onde está a computação gráfica matemática pura de vocês?"*
+**Resposta:** Quando carregamos um modelo que não possui Vetores Normais para cálculo de iluminação. Nós aplicamos a Álgebra Linear aplicando o **Produto Vetorial (Cross Product)** nos três vértices da face geométrica para calcular a normal ortogonal dinamicamente e a enviamos ao motor de sombreamento Phong / Gouraud Shading (`GL_LIGHT0`, `GL_SMOOTH`).
 
-float raioSoma = inimigo.raioColisao + player.raioColisao;
+### D. Sistema Eficiente de Colisão e Particionamento Básico
+Usamos **Bounding Spheres** para evitar checar triângulo por triângulo. Elevamos as posições X/Z ao quadrado e subtraímos da soma dos raios para evitar a lentidão da raiz quadrada (`sqrt()`) dentro do laço O(n²), cruzando as hitboxes apenas quando o cálculo escalar exige.
 
-if (distSq <= (raioSoma * raioSoma)) {
-    // Colisão Exata Detectada via Bounding Sphere!
-    TratarDanoOuAbsorcao(inimigo.cor, player.polaridade);
-}
-```
+### E. Inteligência Artificial: Boids e Fila Temporal
+- **Vírus Alfa:** Programado em torno da lógica dos **Boids**, ele possui uma diretriz de flocular e caçar em revoada, imitando bando de pássaros que se adaptam se o jogador entrar no meio.
+- **Esporos e Pneumococos:** Usam máquinas de estados locais (Patrulha -> Puxão Gravitacional -> Fúria).
+- **Príon Mimético:** O inimigo mais letal. Usa um Fila Circular de dados (*Circular Deque Buffer*) para memorizar posições X/Z que você pisou no passado e trilhar o mesmo caminho de forma atrasada e implacável.
 
-### C. Inteligência Artificial (Boids e Buffer de Memória)
-**O nosso grande diferencial.** O Vírus Alfa usa o algoritmo de **Boids** (Craig Reynolds) para simular comportamento de enxame de pássaros, dividindo o bando ao meio caso sejam bloqueados pelo jogador. Já o "Príon Mimético" da Fase 3 utiliza uma Fila Circular temporal, copiando o jogador com atraso.
-```cpp
-// Atualização de Memória do Príon Mimético (Atraso de 1,5 segundos a 60FPS = 90 posições)
-posicoesAnteriores[headIndex] = {player.GetX(), player.GetZ()};
-headIndex = (headIndex + 1) % maxBufferSize;
-
-// O inimigo lê a posição que o player estava no passado e o segue:
-targetX = posicoesAnteriores[tailIndex].x;
-targetZ = posicoesAnteriores[tailIndex].z;
-```
-
-### D. Renderização 3D, Iluminação e Visibilidade
-Usamos `GL_LIGHTING` e Modelos de Reflexão Phong via Pipeline Fixa, ativando `GL_DEPTH_TEST` (Z-Buffer) para ocultação de superfícies. Como as texturas chegam muitas vezes sem os vetores "Normais", **o jogo as calcula dinamicamente usando Produto Vetorial (Cross Product)** na carga!
-```cpp
-// Geração das normais dinâmicas de um triângulo usando Produto Vetorial:
-float ux = v2.x - v1.x; float uy = v2.y - v1.y; float uz = v2.z - v1.z;
-float vx = v3.x - v1.x; float vy = v3.y - v1.y; float vz = v3.z - v1.z;
-
-// Produto vetorial Nx, Ny, Nz
-float nx = uy * vz - uz * vy;
-float ny = uz * vx - ux * vz;
-float nz = ux * vy - uy * vx;
-
-// Normaliza o vetor para luz perfeita no Gouraud Shading
-float len = sqrt(nx*nx + ny*ny + nz*nz);
-v1.nx = nx / len; // Aplica no vértice
-```
+### F. Gestão de Memória: Animações de Cenário
+Não criamos um único fundo gigantesco. A "Animação de Fundo" (Backgrounds) é controlada carregando até 240 quadros leves que intercalam em função da variável temporal base (ex: `gameTimer`), calculando seu índice exato a 60 FPS, dando a ilusão de voar sobre tecidos biológicos.
 
 ---
 
-### E. Aplicação Prática dos Conteúdos da Disciplina (Exemplos-Aulas)
+## 5. Casamento com a Ementa da Disciplina (Como convencer o professor)
 
-#### 1. Transformações Geométricas e Hierárquicas (Aulas 07 e Robô)
-Lembra do exercício do "Braço Robótico" ( Tarefa 07 ), onde você precisava usar `glPushMatrix` e `glPopMatrix` para rotacionar o antebraço sem afetar o ombro?
-• **Onde aplicamos:** Fazemos isso dezenas de vezes a cada frame! Nós usamos as pilhas de matrizes para separar o sistema de câmera do HUD (Interface), e também dentro dos Inimigos (rotacionamos o corpo do Vírus com `glRotatef` enquanto transladamos ele pelo espaço com `glTranslatef` de forma completamente isolada).
-
-#### 2. Projeções e Visibilidade (Aula 07 e 13)
-• **Onde aplicamos:** Na inicialização da janela, não usamos a câmera perspectiva clássica (`gluPerspective`). Nós manipulamos ativamente a matriz de projeção (`glOrtho`) para achatar o eixo Y e transformar o mundo 3D num shmup isométrico de aspecto 2D, e usamos o Z-Buffer (`GL_DEPTH_TEST`) ensinado na disciplina para que os inimigos passem debaixo do HUD (interface de vida), resolvendo a oclusão visual.
-
-#### 3. Modelagem Geométrica (Aula 22)
-• **Onde aplicamos:** Em vez de desenharmos triângulos manuais no código como no arquivo `desenho3D.cpp` da aula 22, nós automatizamos a extração de vértices de arquivos `.obj` tridimensionais (usando a biblioteca `tinyobjloader`) e repassamos para a placa de vídeo desenhar centenas de milhares de triângulos (`GL_TRIANGLES`).
-
-#### 4. Iluminação e Sombreamento / Gouraud Shading (Aula 22)
-O professor focou bastante nos modelos matemáticos da luz em computação gráfica.
-• **Onde aplicamos:** Usamos o modelo de Phong (`GL_LIGHTING`, `GL_LIGHT0`) e a interpolação suave de Gouraud (`GL_SMOOTH`). Mas fomos muito além: quando o `.obj` vem sem os vetores normais, nosso código em C++ implementa a Álgebra Linear nua e crua, fazendo o Produto Vetorial (Cross Product) matemático entre os vértices do triângulo para descobrir qual é a "Normal" (`Nx, Ny, Nz`) e assim refletir a luz corretamente. Esse é um algoritmo que impressiona qualquer professor de CG!
-
-#### 5. Texturização e Blending (Unidade 3)
-• **Onde aplicamos:** Fizemos a amostragem das coordenadas U, V dos modelos e implementamos o canal Alpha (Transparência matemática: `GL_BLEND` com `GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA`). É essa exata matemática que faz o sangue pulsar transparente no fundo e os escudos dos chefões parecerem vidro.
+1. **Transformações Geométricas e Hierarquia:** Assim como no exemplo do "Robô" ministrado em sala, rotacionamos (`glRotatef`) a entidade sobre seu próprio eixo local de forma desvinculada de sua translação global pelo mapa (`glTranslatef`), encapsulando os estados para não torcer outros elementos na tela.
+2. **Projeções e Visibilidade:** Lidamos duramente com o temido Z-Buffer (`GL_DEPTH_TEST`). Calibramos recortes exatos da câmera para que a tela não sofresse *Z-fighting* (intermitência visual) em objetos distantes.
+3. **Modelagem:** Em vez de *hardcodar* vértices brutos no C++, nós criamos uma ponte programável com o software *Blender*, puxando os modelos exportados e conectando-os no OpenGL.
+4. **Texturização e Blending (Unidade 3):** Exploramos o canal Alpha (transparência matemática `GL_BLEND` com `GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA`). Essa matemática funde o pixel de fundo com o da frente, construindo "escudos" de plasma visualmente translúcidos e vívidos, algo muito distante de blocos retangulares estáticos.
+5. **Matrizes (Push/Pop):** Controlamos a separação das HUDs, onde a interface com o slider de menu e a barra de sangue nunca afundam na profundidade porque a matriz ortográfica sobrepõe as definições da perspectiva isométrica 3D do restante do jogo.
 
 ---
 
-## 5. Diferenciais de Sucesso (Fale sobre isso!)
-Se ele perguntar: "O que o projeto de vocês tem de tão especial?", cite:
-1. **Engine Híbrida 3D/2D Dinâmica:** Nós isolamos as Pilhas de Matrizes (`glPushMatrix / glPopMatrix`). Renderizamos as camadas de Fundo (`glOrtho 2D`), as Entidades com Luz e Z-Buffer (`Perspectiva 3D`) e, por fim, a HUD e as Hitboxes (`Overlay UI puro`), **sem que um corrompa a matriz do outro**.
-2. **Texturas Dinâmicas e Alpha Blending:** Para simular o plasma das veias, ativamos `GL_BLEND` manipulando o canal Alpha para os escudos dos Chefões.
-3. **Display Lists para Otimização:** O chefão (Gigante Pneumococo) usa milhares de vértices. Para não engasgar o jogo em CPU lentas, alocamos os comandos pré-compilados diretamente na GPU via `glGenLists`, rodando o *Bullet-Hell* levemente a 60 FPS travados.
+## 6. Desafios e Soluções (Fechamento Prático)
+- **Desafio:** Conflito de Matriz ModelView. A HUD (Barra de Vida, Tiros) sumia ou rodava junta do player na tela.
+- **Solução:** Aplicamos corretamente o reset de matriz (`glLoadIdentity`) e particionamos em blocos as renderizações UI x Cenário. 
+- **Desafio:** Entradas de teclado indesejadas (tiros, sons da nave) explodindo na tela do Menu Inicial e Seleção.
+- **Solução:** Controle de Estado. Redirecionamos os fluxos de hardware amarrando os laços do teclado rigidamente nas validações `if(currentState == STATE_PLAYING)`.
+- **Trabalhos Futuros:** Expandir para a pipeline moderna de Shaders programáveis em GLSL e adicionar iluminação fisicamente baseada (*PBR*).
 
 ---
-
-## 6. Resultados e Discussão
-*(Espaço do relatório onde você vai colar de 3 a 5 **Prints (Capturas de Tela)** mostrando:*
-- *A interface HUD funcionando no topo da tela;*
-- *O raio laser SURGE destruindo dezenas de inimigos na Tela;*
-- *O Boss final renderizado perfeitamente, provando o uso de malhas complexas texturizadas.*
-
-## 7. Conclusão
-* **Desafios Enfrentados:** A manipulação equivocada das Matrizes ModelView impedia as caixas de colisão de desenharem junto da textura rotacionada. Outro desafio foi balancear a colisão para que centenas de tiros não congelassem os *frames* da aplicação.
-* **Soluções Adotadas:** Adotamos pilhas de renderização separadas para Câmera Fixa e HUD, e integramos o conceito de partição de matrizes.
-* **Trabalhos Futuros:** Expandir o projeto com PBR (*Physically Based Rendering*) reescrevendo a pipeline para Shaders modernos (GLSL / OpenGL 4+) e suportar modo multijogador em rede.
-
-## 8. Referências
-1. REYNOLDS, Craig W. *Flocks, herds and schools: A distributed behavioral model.* ACM SIGGRAPH Computer Graphics, 1987.
-2. FOLEY, J. et al. *Computer Graphics: Principles and Practice.* Addison-Wesley, 1990.
-3. SHREINER, D. *OpenGL Programming Guide: The Official Guide to Learning OpenGL.* Pearson, 2013.
-4. TREASURE. *Ikaruga.* (Jogo Eletrônico), 2001.
+> **DICA DE OURO PARA APRESENTAR:** Seja enérgico! Mostre confiança apontando os trechos em que vocês misturaram Inteligência Artificial (Boids e Buffer) com Física e Matemática de Cores. O professor não avalia apenas se a tela liga, mas se vocês entenderam **o que acontece na matemática por trás de cada linha do OpenGL.**
